@@ -94,6 +94,7 @@ def main():
     deployment_steps = [
         # 1. Base DDL and configuration seeds
         ("DDL & Default Config Seeds", kql_dir / "L2_eventhouse_ddl.kql"),
+        ("Missing Graph Output Tables", kql_dir / "L4_missing_tables.kql"),
         # 2. Seeding CSV data
         ("Seeding dim_customer", upload_ready_dir / "ingest_dim_customer.kql"),
         ("Seeding dim_account", upload_ready_dir / "ingest_dim_account.kql"),
