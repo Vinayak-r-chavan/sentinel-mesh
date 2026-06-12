@@ -58,9 +58,9 @@ def get_kusto_client(cluster_uri: str) -> KustoClient:
             cluster_uri, client_id, client_secret, tenant_id
         )
     else:
-        print("[DEPLOY] No Service Principal credentials found. Authenticating using Interactive Browser Login...")
-        print("[DEPLOY] A browser window will open for you to log in with your Microsoft account.")
-        kcsb = KustoConnectionStringBuilder.with_interactive_login(cluster_uri)
+        print("[DEPLOY] No Service Principal credentials found. Authenticating using Device Login...")
+        print("[DEPLOY] Copy the device code printed below and enter it at the Microsoft login link.")
+        kcsb = KustoConnectionStringBuilder.with_aad_device_authentication(cluster_uri)
         
     return KustoClient(kcsb)
 
