@@ -1,0 +1,40 @@
+{
+  "scenario_id": "shadow_link",
+  "name": "Shadow Link / Hidden Relationship",
+  "description": "Two or more supposedly unrelated customers share devices or IP addresses, suggesting coordinated activity by related parties concealing their connection.",
+  "aml_category": "Concealment",
+  "risk_level": "HIGH",
+
+  "parameters": {
+    "linked_customer_count": {
+      "min": 2,
+      "max": 4,
+      "description": "Number of customers involved in the shadow link"
+    },
+    "shared_attributes": ["device_id", "ip_address"],
+    "linked_txn_amount": {
+      "min": 500000,
+      "max": 5000000
+    },
+    "time_proximity_hours": 48,
+    "txn_count_per_customer": {
+      "min": 1,
+      "max": 5
+    },
+    "preferred_channels": ["Mobile", "UPI"],
+    "same_city_probability": 0.8
+  },
+
+  "detection_hints": {
+    "primary_agent": "shadow_link_discoverer",
+    "supporting_agents": ["structuring_sentinel", "velocity_anomaly"],
+    "expected_confidence_range": [0.70, 0.96],
+    "key_indicators": [
+      "Shared mobile device between unrelated customers",
+      "Shared IP address",
+      "No declared relationship",
+      "High combined volume across linked customers",
+      "Similar transaction patterns across linked customers"
+    ]
+  }
+}

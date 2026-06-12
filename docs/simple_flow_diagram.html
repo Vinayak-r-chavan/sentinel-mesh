@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SENTINEL MESH — Simplified Core Flow</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  /* Fixed size canvas ensures pixel-perfect arrow alignment & clean white background for PPT */
+  .canvas {
+    width: 1200px;
+    height: 300px;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Node/Box Styling ── */
+  .node {
+    position: absolute;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 14px 18px;
+    z-index: 3;
+    transition: all 0.2s ease;
+  }
+  .node:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  }
+
+  .node .layer-tag {
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #90a4ae;
+    margin-bottom: 3px;
+  }
+
+  .node .title {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .node .desc {
+    font-size: 10px;
+    font-weight: 400;
+    color: #546e7a;
+    margin-top: 4px;
+    line-height: 1.35;
+  }
+
+  /* Curated Premium Color Themes matching architecture_diagram.html */
+  .theme-sources {
+    border: 2px solid #78909c;
+    background: #f8f9fa;
+  }
+  .theme-sources .title { color: #37474f; }
+
+  .theme-ingest-store {
+    border: 2px solid #7e57c2;
+    background: #f3e5f5;
+  }
+  .theme-ingest-store .title { color: #4527a0; }
+
+  .theme-brain {
+    border: 2.5px solid #1e88e5;
+    background: #e3f2fd;
+    box-shadow: 0 4px 12px rgba(30,136,229,0.12);
+  }
+  .theme-brain .title { color: #0d47a1; }
+
+  .theme-swarm {
+    border: 2px solid #ab47bc;
+    background: #fce4ec;
+  }
+  .theme-swarm .title { color: #880e4f; }
+
+  .theme-response {
+    border: 2.5px solid #43a047;
+    background: #e8f5e9;
+  }
+  .theme-response .title { color: #1b5e20; }
+
+  /* ── SVG Arrows Layer ── */
+  .arrows {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* ── Edge labels on lines ── */
+  .edge-label {
+    position: absolute;
+    font-size: 9px;
+    font-weight: 600;
+    background: #ffffff;
+    color: #546e7a;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid #cfd8dc;
+    z-index: 5;
+    transform: translate(-50%, -50%);
+  }
+</style>
+</head>
+<body>
+
+<div class="canvas">
+
+  <!-- ══════════ SVG CONNECTOR ARROWS ══════════ -->
+  <svg class="arrows">
+    <defs>
+      <!-- Premium Sleek Arrowhead -->
+      <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0,0 8,3 0,6" fill="#78909c"/>
+      </marker>
+      <!-- Feedback Arrowhead (Green) -->
+      <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0,0 8,3 0,6" fill="#43a047"/>
+      </marker>
+    </defs>
+
+    <!-- Linear connections between boxes -->
+    <!-- Sources → Ingestion & Storage -->
+    <path d="M 230,150 L 260,150" stroke="#78909c" stroke-width="2" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Ingestion & Storage → Cognitive Brain -->
+    <path d="M 470,150 L 500,150" stroke="#78909c" stroke-width="2" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Cognitive Brain → Swarm Detection -->
+    <path d="M 710,150 L 740,150" stroke="#78909c" stroke-width="2" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Swarm Detection → Action Gateway -->
+    <path d="M 950,150 L 980,150" stroke="#78909c" stroke-width="2" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Feedback loop path from Action back to Cognitive Brain (C-shaped curve at the bottom) -->
+    <path d="M 1090,205 L 1090,250 Q 1090,265 1075,265 L 625,265 Q 610,265 610,250 L 610,205" stroke="#43a047" stroke-width="2" fill="none" stroke-dasharray="6,4" marker-end="url(#arrow-green)" />
+  </svg>
+
+
+  <!-- ══════════ EDGE PATH LABELS ══════════ -->
+  <div class="edge-label" style="top: 150px; left: 245px;">Streaming Inflow</div>
+  <div class="edge-label" style="top: 150px; left: 485px;">Semantic Binding</div>
+  <div class="edge-label" style="top: 150px; left: 725px;">GQL / KQL Queries</div>
+  <div class="edge-label" style="top: 150px; left: 965px;">Risk Scoring</div>
+  <div class="edge-label" style="top: 265px; left: 850px; color: #43a047;">L9 Feedback: Autotune Rules & Recalibrate Thresholds</div>
+
+
+  <!-- ══════════ 5 CORE FLOW BOXES (Y=95, Height=110) ══════════ -->
+  
+  <!-- Node 1: Sources -->
+  <div class="node theme-sources" style="top: 95px; left: 30px; width: 200px; height: 110px;">
+    <div class="layer-tag">Layer 1</div>
+    <div class="title">Data Sources</div>
+    <div class="desc">Core Banking, SWIFT, Card Networks, UPI, and KYC Watchlists.</div>
+  </div>
+
+  <!-- Node 2: Ingestion & Storage -->
+  <div class="node theme-ingest-store" style="top: 95px; left: 270px; width: 200px; height: 110px;">
+    <div class="layer-tag">Layers 1 - 2</div>
+    <div class="title">Ingestion & Storage</div>
+    <div class="desc">Fabric Eventstreams normalize data into KQL DB (Hot) & Lakehouse (Warm).</div>
+  </div>
+
+  <!-- Node 3: Cognitive Brain -->
+  <div class="node theme-brain" style="top: 95px; left: 510px; width: 200px; height: 110px;">
+    <div class="layer-tag">Layer 3</div>
+    <div class="title">IQ Ontology Core</div>
+    <div class="desc">Binds data into entities (Customer, Account) & builds Behavioral DNA vectors.</div>
+  </div>
+
+  <!-- Node 4: Swarm Detection -->
+  <div class="node theme-swarm" style="top: 95px; left: 750px; width: 200px; height: 110px;">
+    <div class="layer-tag">Layers 4 - 6</div>
+    <div class="title">Swarm Detection</div>
+    <div class="desc">6 specialized agents check graph links & velocity. Scores ensemble risk (0-100).</div>
+  </div>
+
+  <!-- Node 5: Action Gateway -->
+  <div class="node theme-response" style="top: 95px; left: 990px; width: 180px; height: 110px;">
+    <div class="layer-tag">Layers 7 - 8</div>
+    <div class="title">Response Gateway</div>
+    <div class="desc">AML Copilot drafts SARs; Activator alerts Teams & freezes accounts.</div>
+  </div>
+
+</div>
+
+</body>
+</html>

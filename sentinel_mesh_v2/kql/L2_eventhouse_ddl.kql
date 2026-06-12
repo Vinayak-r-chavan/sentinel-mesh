@@ -1,0 +1,349 @@
+// ============================================================================
+// L2: EVENTHOUSE (KQL DATABASE) — COMPLETE SCHEMA DEFINITIONS
+// SENTINEL MESH V2 — Enhanced DDL for Real-Time Ingestion & Analysis
+// ============================================================================
+//
+// This file contains ALL table definitions for the Eventhouse (KQL Database).
+// Run these commands in your Fabric Eventhouse KQL query editor.
+//
+// Tables are organized by type:
+//   1. FACT TABLES  — Real-time transaction and detection data
+//   2. DIM TABLES   — Reference/dimension data (synced from Lakehouse)
+//   3. CONFIG TABLE — Adaptive thresholds (updated by L9 feedback loop)
+//
+// ============================================================================
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. FACT TABLES
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── 1.1 fact_transactions ──────────────────────────────────────────────────
+// The core transaction ledger. Ingested via Eventstream in real-time.
+// V2 Enhancement: 5 new columns (ingestion_timestamp, processing_status,
+//   risk_flag, pattern_hash, scenario_id)
+//
+// IMPORTANT: If you already have a V1 fact_transactions table, you need to
+// drop and recreate it, OR use .alter table to add the new columns.
+// Option A (clean start):
+.drop table fact_transactions ifexists
+
+.create table fact_transactions (
+    transaction_id: string,
+    customer_id: string,
+    customer_name: string,
+    account_id: string,
+    amount: real,
+    timestamp: datetime,
+    channel: string,
+    device_id: string,
+    ip_address: string,
+    geo_location: string,
+    merchant_id: string,
+    mcc_code: string,
+    counterparty_account: string,
+    transaction_type: string,
+    // ── V2 Enhancements ──
+    ingestion_timestamp: datetime,
+    processing_status: string,
+    risk_flag: string,
+    pattern_hash: string,
+    scenario_id: string
+)
+
+// Option B (if you want to keep existing data — run these ALTER commands instead):
+// .alter-merge table fact_transactions (ingestion_timestamp: datetime, processing_status: string, risk_flag: string, pattern_hash: string, scenario_id: string)
+
+
+// ── 1.2 fact_alerts ────────────────────────────────────────────────────────
+// Every detection finding from the 6 AI agents.
+// Written by: L5 agent swarm + L6 scoring engine
+// Read by: L7 copilot, L9 feedback loop, Dashboard
+.drop table fact_alerts ifexists
+
+.create table fact_alerts (
+    alert_id: string,
+    customer_id: string,
+    customer_name: string,
+    agent_name: string,
+    confidence: real,
+    reason: string,
+    risk_score: real,
+    risk_tier: string,
+    status: string,
+    disposition: string,
+    triggered_at: datetime,
+    resolved_at: datetime,
+    related_transactions: dynamic,
+    cross_correlations: dynamic
+)
+
+
+// ── 1.3 fact_sar_reports ───────────────────────────────────────────────────
+// AI-generated Suspicious Activity Reports.
+// Written by: L7 SAR generator (Azure OpenAI)
+// Read by: Dashboard
+.drop table fact_sar_reports ifexists
+
+.create table fact_sar_reports (
+    sar_id: string,
+    customer_id: string,
+    customer_name: string,
+    case_id: string,
+    executive_summary: string,
+    suspicious_activity: string,
+    red_flags: dynamic,
+    recommended_actions: dynamic,
+    risk_assessment: string,
+    risk_score: real,
+    model_version: string,
+    prompt_hash: string,
+    generated_at: datetime,
+    validated: bool,
+    content_safety_score: real
+)
+
+
+// ── 1.4 fact_analyst_dispositions ──────────────────────────────────────────
+// Analyst feedback on alerts: TRUE_POSITIVE / FALSE_POSITIVE / ESCALATE.
+// Written by: Analysts via API / Power App
+// Read by: L9 recalibration engine
+.drop table fact_analyst_dispositions ifexists
+
+.create table fact_analyst_dispositions (
+    disposition_id: string,
+    alert_id: string,
+    customer_id: string,
+    agent_name: string,
+    disposition: string,
+    analyst_id: string,
+    timestamp: datetime,
+    notes: string
+)
+
+
+// ── 1.5 fact_circular_flows ────────────────────────────────────────────────
+// Detected circular fund flow patterns from graph analysis.
+// Written by: L4 graph analysis (KQL make-graph or Spark)
+// Read by: L5 circular flow agent, Dashboard
+.drop table fact_circular_flows ifexists
+
+.create table fact_circular_flows (
+    flow_id: string,
+    cycle_accounts: dynamic,
+    cycle_customers: dynamic,
+    hop_count: int,
+    total_amount: real,
+    avg_amount_per_hop: real,
+    amount_consistency_pct: real,
+    time_window_minutes: real,
+    detected_at: datetime,
+    status: string
+)
+
+
+// ── 1.6 fact_risk_scores ───────────────────────────────────────────────────
+// Historical risk score snapshots for trend analysis.
+// Written by: L6 scoring engine (periodic snapshots)
+// Read by: Dashboard, L7 copilot, L9 feedback
+.drop table fact_risk_scores ifexists
+
+.create table fact_risk_scores (
+    snapshot_id: string,
+    customer_id: string,
+    customer_name: string,
+    risk_score: real,
+    risk_tier: string,
+    f1_agent_consensus: real,
+    f2_graph_centrality: real,
+    f3_dna_deviation: real,
+    f4_historical_risk: real,
+    f5_watchlist_match: real,
+    active_agents: dynamic,
+    snapshot_timestamp: datetime
+)
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. DIMENSION TABLES (Synced from Lakehouse or loaded via CSV/API)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── 2.1 dim_customer ───────────────────────────────────────────────────────
+// Customer master data. Generated by dimension_generator.py.
+// Sync method: Upload CSV via Fabric portal, or Spark shortcut from Lakehouse
+.drop table dim_customer ifexists
+
+.create table dim_customer (
+    customer_id: string,
+    name: string,
+    risk_score: real,
+    kyc_status: string,
+    pep_flag: bool,
+    country_code: string,
+    city: string,
+    created_date: datetime
+)
+
+
+// ── 2.2 dim_account ────────────────────────────────────────────────────────
+// Account master data. Generated by dimension_generator.py.
+.drop table dim_account ifexists
+
+.create table dim_account (
+    account_id: string,
+    customer_id: string,
+    account_type: string,
+    balance: real,
+    velocity_index: real,
+    opened_date: datetime,
+    dormancy_score: real
+)
+
+
+// ── 2.3 dim_merchant ───────────────────────────────────────────────────────
+// Merchant master data with risk profiles.
+.drop table dim_merchant ifexists
+
+.create table dim_merchant (
+    merchant_id: string,
+    merchant_name: string,
+    mcc_code: string,
+    category: string,
+    risk_tier: string,
+    shell_score: real,
+    registered_date: datetime
+)
+
+
+// ── 2.4 dim_device ─────────────────────────────────────────────────────────
+// Device fingerprint data for shadow link detection. NEW in V2.
+.drop table dim_device ifexists
+
+.create table dim_device (
+    device_id: string,
+    device_type: string,
+    first_seen: datetime,
+    last_seen: datetime,
+    customer_ids: dynamic
+)
+
+
+// ── 2.5 dim_ip_address ─────────────────────────────────────────────────────
+// IP address data for network fingerprinting. NEW in V2.
+.drop table dim_ip_address ifexists
+
+.create table dim_ip_address (
+    ip_address: string,
+    geo_location: string,
+    is_vpn: bool,
+    is_tor: bool,
+    customer_ids: dynamic
+)
+
+
+// ── 2.6 dim_behavioral_dna ─────────────────────────────────────────────────
+// Auto-computed 12-dimensional behavioral DNA profiles. NEW in V2.
+// Computed by: L3 Spark notebook (notebooks/L3_behavioral_dna.py)
+// Temporal versioning: each row is a snapshot, not overwritten
+.drop table dim_behavioral_dna ifexists
+
+.create table dim_behavioral_dna (
+    customer_id: string,
+    time_window: string,
+    velocity: real,
+    amount_profile: real,
+    temporal_pattern: real,
+    counterparty_diversity: real,
+    channel_mix: real,
+    geographic_spread: real,
+    amount_entropy: real,
+    round_number_ratio: real,
+    counterparty_recurrence: real,
+    dormancy_burst: real,
+    cross_border_ratio: real,
+    device_switching: real,
+    drift_score: real,
+    computed_at: datetime
+)
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. CONFIG TABLE — Adaptive Thresholds & Weights
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── 3.1 dim_adaptive_config ────────────────────────────────────────────────
+// Dynamic configuration: scoring weights, agent thresholds, tier boundaries.
+// Written by: L9 recalibration engine (auto-adjusts based on TP/FP rates)
+// Read by: L5 agents, L6 scoring engine (via cross-database query or externaldata)
+// CRITICAL: This table replaces ALL hard-coded thresholds from V1
+.drop table dim_adaptive_config ifexists
+
+.create table dim_adaptive_config (
+    config_key: string,
+    config_value: real,
+    description: string,
+    last_updated: datetime,
+    updated_by: string
+)
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. SEED THE ADAPTIVE CONFIG TABLE
+// ─────────────────────────────────────────────────────────────────────────────
+// Initial values — these will be auto-adjusted by L9 feedback loop
+
+.set-or-append dim_adaptive_config <|
+    union
+    (print config_key="scoring.weight.f1_agent_consensus", config_value=35.0, description="Weight for agent consensus factor", last_updated=now(), updated_by="system_init"),
+    (print config_key="scoring.weight.f2_graph_centrality", config_value=20.0, description="Weight for graph centrality factor", last_updated=now(), updated_by="system_init"),
+    (print config_key="scoring.weight.f3_dna_deviation", config_value=20.0, description="Weight for DNA deviation factor", last_updated=now(), updated_by="system_init"),
+    (print config_key="scoring.weight.f4_historical_risk", config_value=15.0, description="Weight for historical risk factor", last_updated=now(), updated_by="system_init"),
+    (print config_key="scoring.weight.f5_watchlist_match", config_value=10.0, description="Weight for watchlist match factor", last_updated=now(), updated_by="system_init"),
+    (print config_key="scoring.tier.low", config_value=30.0, description="Upper bound for LOW risk tier", last_updated=now(), updated_by="system_init"),
+    (print config_key="scoring.tier.medium", config_value=60.0, description="Upper bound for MEDIUM risk tier", last_updated=now(), updated_by="system_init"),
+    (print config_key="scoring.tier.high", config_value=80.0, description="Upper bound for HIGH risk tier", last_updated=now(), updated_by="system_init"),
+    (print config_key="agent.structuring.amount_threshold", config_value=1000000.0, description="CTR reporting threshold in INR", last_updated=now(), updated_by="system_init"),
+    (print config_key="agent.structuring.min_txn_count", config_value=3.0, description="Minimum transaction count for structuring", last_updated=now(), updated_by="system_init"),
+    (print config_key="agent.velocity.sigma_threshold", config_value=3.0, description="Standard deviations for anomaly detection", last_updated=now(), updated_by="system_init"),
+    (print config_key="agent.velocity.baseline_window_days", config_value=30.0, description="Days of history for baseline calculation", last_updated=now(), updated_by="system_init"),
+    (print config_key="agent.geo_temporal.max_travel_minutes", config_value=120.0, description="Max minutes for impossible travel detection", last_updated=now(), updated_by="system_init"),
+    (print config_key="agent.circular_flow.min_hops", config_value=3.0, description="Minimum hops for circular flow detection", last_updated=now(), updated_by="system_init"),
+    (print config_key="agent.circular_flow.max_hops", config_value=10.0, description="Maximum hops to search for circular flows", last_updated=now(), updated_by="system_init"),
+    (print config_key="agent.shadow_link.max_hop_depth", config_value=3.0, description="Maximum transitive closure depth", last_updated=now(), updated_by="system_init"),
+    (print config_key="agent.shell_entity.shell_score_threshold", config_value=0.70, description="Shell score threshold for flagging", last_updated=now(), updated_by="system_init"),
+    (print config_key="agent.shell_entity.min_concentration_ratio", config_value=0.80, description="Minimum counterparty concentration for shell flag", last_updated=now(), updated_by="system_init"),
+    (print config_key="dna.drift_threshold_sigma", config_value=2.5, description="Sigma threshold for DNA drift detection", last_updated=now(), updated_by="system_init")
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. INGESTION MAPPING (for Eventstream auto-mapping)
+// ─────────────────────────────────────────────────────────────────────────────
+// If your Eventstream auto-creates a table, you may need to map it:
+// .create table ['fact_transactions_raw'] ingestion json mapping 'fact_transactions_mapping' '[...]'
+// For now, configure the mapping in the Fabric Eventstream UI.
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. RETENTION POLICIES (Optional — configure based on data volume)
+// ─────────────────────────────────────────────────────────────────────────────
+// Hot data retention: keep last 90 days in Eventhouse (configurable)
+// .alter table fact_transactions policy retention softdelete = 90d recoverability = disabled
+// .alter table fact_alerts policy retention softdelete = 365d recoverability = disabled
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. VERIFICATION QUERIES
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Verify all tables created:
+// .show tables
+
+// Verify fact_transactions schema:
+// .show table fact_transactions schema as json
+
+// Verify dim_adaptive_config seeded:
+// dim_adaptive_config | order by config_key asc
+
+// Count check after streaming:
+// fact_transactions | count
+// fact_transactions | summarize count() by scenario_id

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SENTINEL MESH — Technical Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  /* Fixed size canvas ensures pixel-perfect arrow alignment */
+  .canvas {
+    width: 1200px;
+    height: 720px;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Platform Group Borders ── */
+  .platform-group {
+    position: absolute;
+    border: 1.5px dashed #b0bec5;
+    border-radius: 8px;
+    background: rgba(248, 249, 250, 0.3);
+    z-index: 1;
+  }
+  .platform-label {
+    position: absolute;
+    font-size: 11px;
+    font-weight: 700;
+    color: #546e7a;
+    background: #ffffff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    z-index: 4;
+  }
+
+  /* ── Node/Box Styling ── */
+  .node {
+    position: absolute;
+    border-radius: 6px;
+    background: #ffffff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 14px;
+    z-index: 3;
+  }
+  
+  .node.small {
+    padding: 6px 10px;
+    align-items: center;
+  }
+
+  .node .layer-tag {
+    font-size: 7.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #90a4ae;
+    margin-bottom: 2px;
+  }
+
+  .node .title {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .node .desc {
+    font-size: 9.5px;
+    font-weight: 400;
+    color: #546e7a;
+    margin-top: 3px;
+    line-height: 1.3;
+  }
+
+  /* Curated Premium Color Themes */
+  .theme-sources {
+    border: 1.5px solid #78909c;
+    background: #eceff1;
+  }
+  .theme-sources .title { color: #37474f; }
+
+  .theme-ingest {
+    border: 1.5px solid #00897b;
+    background: #e0f2f1;
+  }
+  .theme-ingest .title { color: #004d40; }
+
+  .theme-storage {
+    border: 1.5px solid #7e57c2;
+    background: #f3e5f5;
+  }
+  .theme-storage .title { color: #4527a0; }
+
+  .theme-ontology {
+    border: 2.5px solid #1e88e5;
+    background: #e3f2fd;
+    box-shadow: 0 4px 10px rgba(30,136,229,0.1);
+  }
+  .theme-ontology .title { color: #0d47a1; font-size: 13px; }
+
+  .theme-graph {
+    border: 1.5px solid #ab47bc;
+    background: #f3e5f5;
+  }
+  .theme-graph .title { color: #4a148c; }
+
+  .theme-agent {
+    border: 1.2px solid #5e35b1;
+    background: #ede7f6;
+  }
+  .theme-agent .title { color: #311b92; font-size: 11px; }
+
+  .theme-orchestrator {
+    border: 2px solid #5e35b1;
+    background: #d1c4e9;
+  }
+  .theme-orchestrator .title { color: #311b92; }
+
+  .theme-scoring {
+    border: 2px solid #ffb300;
+    background: #fff8e1;
+  }
+  .theme-scoring .title { color: #e65100; }
+
+  .theme-copilot {
+    border: 1.8px solid #00897b;
+    background: #e0f2f1;
+  }
+  .theme-copilot .title { color: #004d40; }
+
+  .theme-action {
+    border: 1.8px solid #e53935;
+    background: #ffebee;
+  }
+  .theme-action .title { color: #b71c1c; }
+
+  .theme-bi {
+    border: 1.5px solid #fb8c00;
+    background: #fff3e0;
+  }
+  .theme-bi .title { color: #e65100; }
+
+  .theme-feedback {
+    border: 2px solid #43a047;
+    background: #e8f5e9;
+  }
+  .theme-feedback .title { color: #1b5e20; }
+
+  /* ── SVG Arrows Layer ── */
+  .arrows {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* ── Edge labels on lines ── */
+  .edge-label {
+    position: absolute;
+    font-size: 8.5px;
+    font-weight: 600;
+    background: #ffffff;
+    padding: 1px 4px;
+    border-radius: 2px;
+    border: 1px solid #cfd8dc;
+    z-index: 5;
+    transform: translate(-50%, -50%);
+  }
+</style>
+</head>
+<body>
+
+<div class="canvas">
+
+  <!-- ══════════ PLATFORM CONTAINERS ══════════ -->
+  <!-- Storage Container -->
+  <div class="platform-group" style="top: 110px; left: 215px; width: 175px; height: 390px;"></div>
+  <div class="platform-label" style="top: 102px; left: 225px;">Fabric Storage</div>
+
+  <!-- Agent Swarm Container -->
+  <div class="platform-group" style="top: 110px; left: 600px; width: 170px; height: 390px;"></div>
+  <div class="platform-label" style="top: 102px; left: 610px;">Agent Swarm</div>
+
+
+  <!-- ══════════ SVG CONNECTOR ARROWS ══════════ -->
+  <svg class="arrows">
+    <defs>
+      <!-- Normal Arrowhead -->
+      <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0,0 8,3 0,6" fill="#78909c"/>
+      </marker>
+      <!-- Feedback Arrowhead (Green) -->
+      <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0,0 8,3 0,6" fill="#43a047"/>
+      </marker>
+      <!-- Context Arrowhead (Blue) -->
+      <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0,0 8,3 0,6" fill="#1e88e5"/>
+      </marker>
+    </defs>
+
+    <!-- ── L1: Data Sources to Ingestion Bus ── -->
+    <path d="M 90,55 L 90,85 L 1080,85 L 1080,55" stroke="#90a4ae" stroke-width="1.5" fill="none" />
+    <path d="M 250,55 L 250,85" stroke="#90a4ae" stroke-width="1.5" fill="none" />
+    <path d="M 410,55 L 410,85" stroke="#90a4ae" stroke-width="1.5" fill="none" />
+    <path d="M 570,55 L 570,85" stroke="#90a4ae" stroke-width="1.5" fill="none" />
+    <path d="M 730,55 L 730,85" stroke="#90a4ae" stroke-width="1.5" fill="none" />
+    <path d="M 890,55 L 890,85" stroke="#90a4ae" stroke-width="1.5" fill="none" />
+
+    <!-- Dropdown straight arrows from bus to Eventstreams -->
+    <path d="M 115,85 L 115,160" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    
+    <!-- Data Pipelines clean left-side bypass path, starting exactly at X=90 to eliminate the line cut gap -->
+    <path d="M 90,85 L 25,85 Q 15,85 15,95 L 15,370 Q 15,385 30,385 L 40,385" stroke="#78909c" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+
+    <!-- ── Col 1 to Col 2: Ingestion to Storage (Distributed S-Curves with straight horizontal terminations) ── -->
+    <!-- Eventstreams → Eventhouse (Hot) -->
+    <path d="M 190,190 C 210,190 210,180 220,180 L 230,180" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    <!-- Eventstreams → Lakehouse (Warm) -->
+    <path d="M 190,220 C 210,220 210,275 220,275 L 230,275" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    <!-- Data Pipelines → Lakehouse (Warm) -->
+    <path d="M 190,365 C 210,365 210,305 220,305 L 230,305" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    <!-- Data Pipelines → OneLake (Cold) -->
+    <path d="M 190,410 C 210,410 210,400 220,400 L 230,400" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+
+    <!-- ── Col 2 to Col 3: Storage to Ontology (Symmetric distributed curves with straight horizontal terminations) ── -->
+    <!-- Eventhouse → Ontology -->
+    <path d="M 380,180 C 400,180 400,205 410,205 L 420,205" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    <!-- Lakehouse → Ontology -->
+    <path d="M 380,290 C 400,290 400,225 410,225 L 420,225" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    <!-- OneLake → Ontology -->
+    <path d="M 380,400 C 400,400 400,245 410,245 L 420,245" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Ontology to Graph -->
+    <path d="M 495,270 L 495,310" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Ontology to Agent Swarm (Context - Dashed Blue) -->
+    <path d="M 570,225 L 600,225" stroke="#1e88e5" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrow-blue)" />
+
+    <!-- Eventhouse → Swarm (KQL) - Rounded highway routing -->
+    <path d="M 302,140 L 302,110 Q 302,95 322,95 L 665,95 Q 685,95 685,110 L 685,125" stroke="#90a4ae" stroke-width="1.2" fill="none" stroke-dasharray="4,2" marker-end="url(#arrow)" />
+    
+    <!-- Graph → Swarm (GQL) -->
+    <path d="M 570,355 L 600,355" stroke="#78909c" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+
+    <!-- ── Col 4 to Col 5: Swarm to Orchestrator (Smooth curves with straight horizontal terminations) ── -->
+    <path d="M 750,152 C 775,152 775,195 790,195 L 800,195" stroke="#78909c" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+    <path d="M 750,207 C 775,207 775,207 790,207 L 800,207" stroke="#78909c" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+    <path d="M 750,262 C 775,262 775,219 790,219 L 800,219" stroke="#78909c" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+    <path d="M 750,317 C 775,317 775,231 790,231 L 800,231" stroke="#78909c" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+    <path d="M 750,372 C 775,372 775,243 790,243 L 800,243" stroke="#78909c" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+    <path d="M 750,427 C 775,427 775,255 790,255 L 800,255" stroke="#78909c" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Orchestrator to Risk Engine -->
+    <path d="M 875,260 L 875,310" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+
+    <!-- ── Col 5 to Col 6: Risk Engine to Outputs (Distributed Output Branches with straight horizontal terminations) ── -->
+    <path d="M 950,330 C 970,330 970,200 980,200 L 990,200" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    <path d="M 950,350 C 970,350 970,310 980,310 L 990,310" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    <path d="M 950,370 C 970,370 970,420 980,420 L 990,420" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Copilot to Action Gateway -->
+    <path d="M 1075,240 L 1075,270" stroke="#78909c" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Ontology Grounding to Copilot (Grounding - Dashed Blue) -->
+    <path d="M 495,180 L 495,115 Q 495,100 510,100 L 1060,100 Q 1075,100 1075,115 L 1075,160" stroke="#1e88e5" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrow-blue)" />
+
+    <!-- Action Gateway to Feedback Loop (Rounded corner path) -->
+    <path d="M 1075,350 L 1075,495 Q 1075,510 1060,510 L 605,510 Q 590,510 590,525 L 590,560" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+
+    <!-- ── L9 Feedback Loops (Dashed Green with Smooth Rounded Corners) ── -->
+    <!-- Feedback → Ontology: C-shaped loop routed ABOVE Eventhouse to prevent overlaps, entering top edge of Ontology at X=450 -->
+    <path d="M 420,595 L 210,595 Q 195,595 195,580 L 195,135 Q 195,125 210,125 L 435,125 Q 450,125 450,135 L 450,180" stroke="#43a047" stroke-width="2" fill="none" stroke-dasharray="6,3" marker-end="url(#arrow-green)" />
+    <!-- Feedback → Risk Engine -->
+    <path d="M 760,595 L 860,595 Q 875,595 875,580 L 875,390" stroke="#43a047" stroke-width="2" fill="none" stroke-dasharray="6,3" marker-end="url(#arrow-green)" />
+  </svg>
+
+
+  <!-- ══════════ EDGE PATH LABELS ══════════ -->
+  <div class="edge-label" style="top: 95px; left: 495px;">KQL Queries</div>
+  <div class="edge-label" style="top: 355px; left: 590px;">GQL</div>
+  <div class="edge-label" style="top: 225px; left: 590px; color: #1e88e5;">Context</div>
+  <div class="edge-label" style="top: 100px; left: 785px; color: #1e88e5;">Grounding</div>
+  <div class="edge-label" style="top: 125px; left: 320px; color: #43a047;">Ontology Updated</div>
+  <div class="edge-label" style="top: 595px; left: 818px; color: #43a047;">Recalibrate</div>
+
+
+  <!-- ══════════ ROW 1: DATA SOURCES (X=20 to 1180, Y=25) ══════════ -->
+  <div class="node theme-sources small" style="top: 20px; left: 20px; width: 140px; height: 35px;">
+    <div class="title">Core Banking</div>
+  </div>
+  <div class="node theme-sources small" style="top: 20px; left: 180px; width: 140px; height: 35px;">
+    <div class="title">Card Networks</div>
+  </div>
+  <div class="node theme-sources small" style="top: 20px; left: 340px; width: 140px; height: 35px;">
+    <div class="title">Wire / SWIFT</div>
+  </div>
+  <div class="node theme-sources small" style="top: 20px; left: 500px; width: 140px; height: 35px;">
+    <div class="title">Mobile Banking</div>
+  </div>
+  <div class="node theme-sources small" style="top: 20px; left: 660px; width: 140px; height: 35px;">
+    <div class="title">POS Terminals</div>
+  </div>
+  <div class="node theme-sources small" style="top: 20px; left: 820px; width: 140px; height: 35px;">
+    <div class="title">KYC Registry</div>
+  </div>
+  <div class="node theme-sources small" style="top: 20px; left: 980px; width: 200px; height: 35px;">
+    <div class="title">AML Watchlists (Sanctions, PEP)</div>
+  </div>
+
+
+  <!-- ══════════ COL 1: INGESTION (X=40 to 190, Y=160/340) ══════════ -->
+  <div class="node theme-ingest" style="top: 160px; left: 40px; width: 150px; height: 90px;">
+    <div class="layer-tag">Layer 1 — Real-Time</div>
+    <div class="title">Eventstreams</div>
+    <div class="desc">Real-time hub normalization</div>
+  </div>
+  
+  <div class="node theme-ingest" style="top: 340px; left: 40px; width: 150px; height: 90px;">
+    <div class="layer-tag">Layer 1 — Batch</div>
+    <div class="title">Data Pipelines</div>
+    <div class="desc">Batch orchestration & loads</div>
+  </div>
+
+
+  <!-- ══════════ COL 2: STORAGE (X=230, Y=140/250/360) ══════════ -->
+  <div class="node theme-storage" style="top: 140px; left: 230px; width: 150px; height: 80px;">
+    <div class="layer-tag">Layer 2 — Hot DB</div>
+    <div class="title">Eventhouse</div>
+    <div class="desc">KQL Engine. Last 90 days of transactions</div>
+  </div>
+
+  <div class="node theme-storage" style="top: 250px; left: 230px; width: 150px; height: 80px;">
+    <div class="layer-tag">Layer 2 — Warm</div>
+    <div class="title">Lakehouse</div>
+    <div class="desc">Delta Tables. KYC & transaction profiles</div>
+  </div>
+
+  <div class="node theme-storage" style="top: 360px; left: 230px; width: 150px; height: 80px;">
+    <div class="layer-tag">Layer 2 — Cold</div>
+    <div class="title">OneLake Archive</div>
+    <div class="desc">ADLS Gen2. 7-year regulatory compliance</div>
+  </div>
+
+
+  <!-- ══════════ COL 3: ONTOLOGY & GRAPH (X=420, Y=180/310) ══════════ -->
+  <div class="node theme-ontology" style="top: 180px; left: 420px; width: 150px; height: 90px;">
+    <div class="layer-tag">Layer 3 — The Brain</div>
+    <div class="title">IQ Ontology Core</div>
+    <div class="desc">Behavioral DNA Profiles</div>
+  </div>
+
+  <div class="node theme-graph" style="top: 310px; left: 420px; width: 150px; height: 90px;">
+    <div class="layer-tag">Layer 4</div>
+    <div class="title">Fabric Graph</div>
+    <div class="desc">GQL Cycle Detection</div>
+  </div>
+
+
+  <!-- ══════════ COL 4: COGNITIVE AGENTS (X=610, Y=125 to 400) ══════════ -->
+  <div class="node theme-agent" style="top: 125px; left: 610px; width: 150px; height: 45px;">
+    <div class="layer-tag">Swarm Agent 1</div>
+    <div class="title">Structuring Sentinel</div>
+  </div>
+  <div class="node theme-agent" style="top: 180px; left: 610px; width: 150px; height: 45px;">
+    <div class="layer-tag">Swarm Agent 2</div>
+    <div class="title">Circular Flow Tracker</div>
+  </div>
+  <div class="node theme-agent" style="top: 235px; left: 610px; width: 150px; height: 45px;">
+    <div class="layer-tag">Swarm Agent 3</div>
+    <div class="title">Shadow Link Discoverer</div>
+  </div>
+  <div class="node theme-agent" style="top: 290px; left: 610px; width: 150px; height: 45px;">
+    <div class="layer-tag">Swarm Agent 4</div>
+    <div class="title">Velocity Anomaly</div>
+  </div>
+  <div class="node theme-agent" style="top: 345px; left: 610px; width: 150px; height: 45px;">
+    <div class="layer-tag">Swarm Agent 5</div>
+    <div class="title">Geo-Temporal Analyzer</div>
+  </div>
+  <div class="node theme-agent" style="top: 400px; left: 610px; width: 150px; height: 45px;">
+    <div class="layer-tag">Swarm Agent 6</div>
+    <div class="title">Shell Entity Profiler</div>
+  </div>
+
+
+  <!-- ══════════ COL 5: ORCHESTRATOR & SCORING (X=800, Y=180/310) ══════════ -->
+  <div class="node theme-orchestrator" style="top: 180px; left: 800px; width: 150px; height: 80px;">
+    <div class="layer-tag">Layer 5</div>
+    <div class="title">Orchestrator</div>
+    <div class="desc">Swarm correlation</div>
+  </div>
+
+  <div class="node theme-scoring" style="top: 310px; left: 800px; width: 150px; height: 80px;">
+    <div class="layer-tag">Layer 6</div>
+    <div class="title">Risk Scoring</div>
+    <div class="desc">Ensemble Score (0-100)</div>
+  </div>
+
+
+  <!-- ══════════ COL 6: OUTPUTS (X=990, Y=160/270/380) ══════════ -->
+  <div class="node theme-copilot" style="top: 160px; left: 990px; width: 170px; height: 80px;">
+    <div class="layer-tag">Layer 7</div>
+    <div class="title">AML Copilot</div>
+    <div class="desc">Auto-SAR narratives</div>
+  </div>
+
+  <div class="node theme-action" style="top: 270px; left: 990px; width: 170px; height: 80px;">
+    <div class="layer-tag">Layer 8</div>
+    <div class="title">Action Gateway</div>
+    <div class="desc">Account freezes & alerts</div>
+  </div>
+
+  <div class="node theme-bi" style="top: 380px; left: 990px; width: 170px; height: 80px;">
+    <div class="title">Power BI</div>
+    <div class="desc">Real-time risk dashboard</div>
+  </div>
+
+
+  <!-- ══════════ ROW 8: FEEDBACK LOOP (X=420, Y=560) ══════════ -->
+  <div class="node theme-feedback" style="top: 560px; left: 420px; width: 340px; height: 70px;">
+    <div class="layer-tag">Layer 9 — Self-Learning</div>
+    <div class="title">Feedback Loop</div>
+    <div class="desc">Analyst decision loop & threshold autotuning</div>
+  </div>
+
+</div>
+
+</body>
+</html>

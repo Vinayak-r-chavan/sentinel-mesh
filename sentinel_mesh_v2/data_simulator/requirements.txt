@@ -1,0 +1,5 @@
+# SENTINEL MESH V2 -- Data Simulator Dependencies
+pyyaml>=6.0
+python-dotenv>=1.0
+faker>=25.0
+azure-eventhub>=5.11

@@ -1,0 +1,41 @@
+{
+  "scenario_id": "dormant_activation",
+  "name": "Dormant Account Activation",
+  "description": "An account that has been inactive for an extended period suddenly shows a burst of high-value transactions, suggesting it may be used as a pass-through for illicit funds.",
+  "aml_category": "Placement",
+  "risk_level": "MEDIUM",
+
+  "parameters": {
+    "dormancy_days": 90,
+    "activation_txn_count": {
+      "min": 3,
+      "max": 10,
+      "description": "Number of transactions in the activation burst"
+    },
+    "activation_amount": {
+      "min": 500000,
+      "max": 3000000,
+      "description": "Amount per transaction during activation"
+    },
+    "activation_window_hours": 24,
+    "preferred_channels": ["Mobile", "UPI", "Branch"],
+    "follow_up_transfer": true,
+    "transfer_delay_hours": {
+      "min": 1,
+      "max": 12
+    }
+  },
+
+  "detection_hints": {
+    "primary_agent": "shell_entity_profiler",
+    "supporting_agents": ["velocity_anomaly_detector"],
+    "expected_confidence_range": [0.60, 0.88],
+    "key_indicators": [
+      "No activity for 90+ days",
+      "Sudden burst of high-value transactions",
+      "Quick follow-up transfers to other accounts",
+      "Account balance spike then rapid drawdown",
+      "Channel usage inconsistent with historical pattern"
+    ]
+  }
+}

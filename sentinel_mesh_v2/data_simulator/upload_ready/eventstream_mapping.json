@@ -1,0 +1,101 @@
+{
+  "mapping_name": "fact_transactions_v2_mapping",
+  "mapping_kind": "Json",
+  "columns": [
+    {
+      "column": "transaction_id",
+      "path": "$.transaction_id",
+      "datatype": "string"
+    },
+    {
+      "column": "customer_id",
+      "path": "$.customer_id",
+      "datatype": "string"
+    },
+    {
+      "column": "customer_name",
+      "path": "$.customer_name",
+      "datatype": "string"
+    },
+    {
+      "column": "account_id",
+      "path": "$.account_id",
+      "datatype": "string"
+    },
+    {
+      "column": "amount",
+      "path": "$.amount",
+      "datatype": "real"
+    },
+    {
+      "column": "timestamp",
+      "path": "$.timestamp",
+      "datatype": "datetime"
+    },
+    {
+      "column": "channel",
+      "path": "$.channel",
+      "datatype": "string"
+    },
+    {
+      "column": "device_id",
+      "path": "$.device_id",
+      "datatype": "string"
+    },
+    {
+      "column": "ip_address",
+      "path": "$.ip_address",
+      "datatype": "string"
+    },
+    {
+      "column": "geo_location",
+      "path": "$.geo_location",
+      "datatype": "string"
+    },
+    {
+      "column": "merchant_id",
+      "path": "$.merchant_id",
+      "datatype": "string"
+    },
+    {
+      "column": "mcc_code",
+      "path": "$.mcc_code",
+      "datatype": "string"
+    },
+    {
+      "column": "counterparty_account",
+      "path": "$.counterparty_account",
+      "datatype": "string"
+    },
+    {
+      "column": "transaction_type",
+      "path": "$.transaction_type",
+      "datatype": "string"
+    },
+    {
+      "column": "ingestion_timestamp",
+      "path": "$.ingestion_timestamp",
+      "datatype": "datetime"
+    },
+    {
+      "column": "processing_status",
+      "path": "$.processing_status",
+      "datatype": "string"
+    },
+    {
+      "column": "risk_flag",
+      "path": "$.risk_flag",
+      "datatype": "string"
+    },
+    {
+      "column": "pattern_hash",
+      "path": "$.pattern_hash",
+      "datatype": "string"
+    },
+    {
+      "column": "scenario_id",
+      "path": "$.scenario_id",
+      "datatype": "string"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "scenario_id": "circular_flow",
+  "name": "Circular Fund Flow / Layering",
+  "description": "Money moves in a cycle through multiple accounts (A->B->C->A) to obscure its origin. Classic layering technique.",
+  "aml_category": "Layering",
+  "risk_level": "CRITICAL",
+
+  "parameters": {
+    "hop_count": {
+      "min": 3,
+      "max": 7,
+      "description": "Number of accounts in the circular chain"
+    },
+    "amount": {
+      "min": 1000000,
+      "max": 5000000,
+      "description": "Base amount flowing through the cycle"
+    },
+    "amount_variation_pct": 2.0,
+    "time_window_minutes": 60,
+    "inter_hop_delay_seconds": {
+      "min": 2,
+      "max": 30
+    },
+    "preferred_channels": ["Mobile", "UPI", "SWIFT"],
+    "same_city_probability": 0.7
+  },
+
+  "detection_hints": {
+    "primary_agent": "circular_flow_tracker",
+    "supporting_agents": ["velocity_anomaly", "shadow_link"],
+    "expected_confidence_range": [0.85, 0.99],
+    "key_indicators": [
+      "Same amount through multiple accounts",
+      "Near-instantaneous transfers",
+      "Closed loop (money returns to origin)",
+      "Accounts with no prior relationship",
+      "Timing suggests automated transfers"
+    ]
+  }
+}

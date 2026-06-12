@@ -1,0 +1,52 @@
+{
+  "name": "SentinelMesh_DNA_Refresh",
+  "properties": {
+    "description": "Triggered every 30 minutes to refresh behavioral DNA profiles in dim_behavioral_dna using newly ingested transaction history.",
+    "activities": [
+      {
+        "name": "Run_Behavioral_DNA_Refresh",
+        "type": "Notebook",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.02:00:00",
+          "retry": 1,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebook": {
+            "referenceName": "L3_Behavioral_DNA",
+            "type": "NotebookReference"
+          },
+          "parameters": {
+            "EVENTHOUSE_CLUSTER_URI": {
+              "value": "@pipeline().parameters.EVENTHOUSE_CLUSTER_URI",
+              "type": "Expression"
+            },
+            "EVENTHOUSE_DATABASE": {
+              "value": "@pipeline().parameters.EVENTHOUSE_DATABASE",
+              "type": "Expression"
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "EVENTHOUSE_CLUSTER_URI": {
+        "type": "string",
+        "defaultValue": ""
+      },
+      "EVENTHOUSE_DATABASE": {
+        "type": "string",
+        "defaultValue": ""
+      }
+    },
+    "annotations": [
+      "AML",
+      "SentinelMesh",
+      "Layer3",
+      "DNA"
+    ]
+  }
+}

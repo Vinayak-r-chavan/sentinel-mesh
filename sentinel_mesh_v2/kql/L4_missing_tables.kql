@@ -1,0 +1,78 @@
+// ============================================================================
+// L4: MISSING TABLE DEFINITIONS — Graph Analysis Output Tables
+// SENTINEL MESH V2 — Run in Fabric Eventhouse KQL Editor
+// ============================================================================
+//
+// These tables store the outputs of L4 graph analysis:
+//   1. fact_shadow_links      — Detected hidden relationships (shared device/IP)
+//   2. fact_graph_communities  — Louvain community detection results
+//   3. fact_entity_resolution  — Merged/linked customer records
+//
+// Run ALL commands below in your Eventhouse KQL query editor.
+// ============================================================================
+
+
+// ── 1. fact_shadow_links ────────────────────────────────────────────────────
+// Detected hidden customer relationships via shared devices and IP addresses.
+// Written by: L4 detect_shadow_links() KQL function (auto-triggered)
+// Read by: L5 Shadow Link Agent, L6 Risk Scoring, L7 Copilot, Dashboard
+.drop table fact_shadow_links ifexists
+
+.create table fact_shadow_links (
+    customer_a_id: string,
+    customer_a_name: string,
+    customer_b_id: string,
+    customer_b_name: string,
+    shared_count: int,
+    shared_entities: dynamic,
+    link_strength: real,
+    detected_at: datetime,
+    status: string
+)
+
+
+// ── 2. fact_graph_communities ───────────────────────────────────────────────
+// Community/cluster assignments from Louvain algorithm.
+// Written by: L4 Spark notebook (L4_graph_analysis.py) via Data Pipeline
+// Read by: L5 agents (fraud ring context), L6 scoring, Dashboard
+.drop table fact_graph_communities ifexists
+
+.create table fact_graph_communities (
+    customer_id: string,
+    account_id: string,
+    community_id: int,
+    community_size: int,
+    pagerank_score: real,
+    in_degree: int,
+    out_degree: int,
+    is_hub: bool,
+    computed_at: datetime
+)
+
+
+// ── 3. fact_entity_resolution ───────────────────────────────────────────────
+// Merged/linked customer records from fuzzy matching + shared infra analysis.
+// Written by: L4 Spark notebook (entity_resolution.py) via Data Pipeline
+// Read by: L5 agents, L6 composite risk scoring, L7 Copilot
+.drop table fact_entity_resolution ifexists
+
+.create table fact_entity_resolution (
+    primary_customer_id: string,
+    primary_customer_name: string,
+    linked_customer_id: string,
+    linked_customer_name: string,
+    match_type: string,
+    match_score: real,
+    shared_devices: dynamic,
+    shared_ips: dynamic,
+    dna_similarity: real,
+    resolved_at: datetime,
+    status: string
+)
+
+
+// ── 4. VERIFICATION ─────────────────────────────────────────────────────────
+// Run this to confirm all 3 tables were created:
+.show tables
+| where TableName in ("fact_shadow_links", "fact_graph_communities", "fact_entity_resolution")
+| project TableName, Folder

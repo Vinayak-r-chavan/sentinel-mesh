@@ -1,0 +1,43 @@
+{
+  "scenario_id": "shell_merchant",
+  "name": "Shell Merchant / Front Company",
+  "description": "A merchant entity that appears to be a front for money laundering — high transaction concentration from few customers, high-risk MCC code, recently registered.",
+  "aml_category": "Integration",
+  "risk_level": "HIGH",
+
+  "parameters": {
+    "shell_score_threshold": 0.70,
+    "counterparty_concentration": 0.80,
+    "merchant_age_days_max": 90,
+    "high_volume_threshold": 2000000,
+    "txn_count": {
+      "min": 5,
+      "max": 15,
+      "description": "Number of transactions flowing through the shell merchant"
+    },
+    "amount_range": {
+      "min": 200000,
+      "max": 3000000
+    },
+    "preferred_mcc_codes": ["5999", "6051", "7995"],
+    "preferred_channels": ["POS", "Mobile", "UPI"],
+    "concentrated_customers": {
+      "min": 1,
+      "max": 3,
+      "description": "Most volume comes from this few customers"
+    }
+  },
+
+  "detection_hints": {
+    "primary_agent": "shell_entity_profiler",
+    "supporting_agents": ["velocity_anomaly", "structuring_sentinel"],
+    "expected_confidence_range": [0.65, 0.92],
+    "key_indicators": [
+      "High-risk MCC code (5999, 6051, 7995)",
+      "Recently registered merchant",
+      "80%+ volume from 1-3 customers",
+      "High shell score",
+      "Transaction patterns inconsistent with stated business"
+    ]
+  }
+}

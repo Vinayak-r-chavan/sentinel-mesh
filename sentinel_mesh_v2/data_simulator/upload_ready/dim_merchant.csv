@@ -1,0 +1,21 @@
+merchant_id,merchant_name,mcc_code,category,risk_tier,shell_score,registered_date
+MERC-0001,Dar-Koshy,6051,Money Transfer,High,0.7774,2023-06-05
+MERC-0002,"Baral, Bumb and Saini",7995,Gambling,High,0.7918,2026-05-08
+MERC-0003,"Virk, Mutti and Lal",7995,Gambling,High,0.4404,2026-05-23
+MERC-0004,"Murthy, Khare and Lanka",5732,Electronics,Low,0.0712,2023-03-01
+MERC-0005,Mital Group,5651,Apparel,Low,0.0225,2024-10-16
+MERC-0006,Andra Group,5541,Gas Stations,Low,0.1286,2024-02-12
+MERC-0007,Borah PLC,5999,Miscellaneous,High,0.7917,2026-03-20
+MERC-0008,"Lanka, Deo and Palla",6051,Money Transfer,High,0.947,2023-03-29
+MERC-0009,Pingle LLC,5999,Miscellaneous,High,0.5622,2022-01-04
+MERC-0010,Mittal-Wadhwa,5999,Miscellaneous,High,0.733,2022-10-08
+MERC-0011,"Mistry, Chawla and Desai",5732,Electronics,Low,0.1607,2021-06-29
+MERC-0012,Chhabra Ltd,5732,Electronics,Low,0.172,2023-09-04
+MERC-0013,Magar LLC,5999,Miscellaneous,High,0.7965,2026-02-17
+MERC-0014,"Oza, Jani and Lalla",5812,Restaurants,Low,0.0917,2023-03-21
+MERC-0015,Krishnamurthy-Behl,5812,Restaurants,Low,0.0886,2025-09-22
+MERC-0016,"Sampath, Malhotra and Basu",7995,Gambling,High,0.6193,2022-03-18
+MERC-0017,De-Lala,5732,Electronics,Low,0.0694,2021-06-16
+MERC-0018,"Sathe, Sane and Andra",5944,Jewelry,Medium,0.3828,2022-10-20
+MERC-0019,Dixit PLC,5944,Jewelry,Medium,0.4838,2022-05-18
+MERC-0020,Divan-Sani,7995,Gambling,High,0.4369,2021-09-24

@@ -1,0 +1,435 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# SENTINEL MESH V2 — Master Configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+# 
+# This is the SINGLE SOURCE OF TRUTH for all parameters in the system.
+# NOTHING is hard-coded anywhere else. Every module reads from this file
+# via config_loader.py.
+#
+# Priority order (highest wins):
+#   dim_adaptive_config (L9) > Azure App Config > This YAML > Built-in defaults
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AZURE RESOURCES
+# ─────────────────────────────────────────────────────────────────────────────
+azure:
+  # Key Vault URL — the ONLY secret stored outside Key Vault
+  # In production, set via environment variable AZURE_KEYVAULT_URL
+  keyvault_url: "${AZURE_KEYVAULT_URL}"
+  app_config_endpoint: "${AZURE_APP_CONFIG_ENDPOINT}"
+  region: "centralindia"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FABRIC RESOURCES
+# ─────────────────────────────────────────────────────────────────────────────
+fabric:
+  workspace: "SentinelMesh_AML_POC"
+  eventhouse: "SentinelMesh_Eventhouse"
+  kql_database: "SentinelMesh_KQLDB"
+  lakehouse: "SentinelMesh_Lakehouse"
+  eventstream: "es_transactions"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DATA SIMULATOR — Dynamic Transaction Generator
+# ─────────────────────────────────────────────────────────────────────────────
+simulator:
+  # Pool sizes — how many entities to generate via Faker
+  customer_pool_size: 50
+  account_pool_size: 80
+  merchant_pool_size: 20
+  device_pool_size: 30
+  ip_pool_size: 40
+
+  # Locale and currency
+  locale: "en_IN"
+  currency: "INR"
+
+  # Normal transaction parameters
+  normal_txn_amount_range:
+    min: 500
+    max: 50000
+
+  # How fast to stream transactions
+  streaming_interval_seconds: 2.0
+
+  # Available channels and their probability weights (must sum to ~1.0)
+  channels:
+    - name: "Branch"
+      weight: 0.20
+    - name: "ATM"
+      weight: 0.15
+    - name: "Mobile"
+      weight: 0.25
+    - name: "UPI"
+      weight: 0.25
+    - name: "SWIFT"
+      weight: 0.05
+    - name: "POS"
+      weight: 0.10
+
+  # Transaction types
+  transaction_types: ["deposit", "withdrawal", "transfer", "payment"]
+
+  # ID format prefix (all IDs auto-generated, never hand-typed)
+  id_prefixes:
+    customer: "CUST"
+    account: "ACC"
+    merchant: "MERC"
+    device: "DEV"
+    transaction: "TXN"
+
+  # Indian cities for geo-location generation
+  cities:
+    - "Bangalore"
+    - "Mumbai"
+    - "Delhi"
+    - "Chennai"
+    - "Hyderabad"
+    - "Pune"
+    - "Kolkata"
+    - "Ahmedabad"
+    - "Jaipur"
+    - "Lucknow"
+    - "Kochi"
+    - "Chandigarh"
+    - "Indore"
+    - "Coimbatore"
+    - "Nagpur"
+
+  # Localities per city (for geo-spread in scenarios)
+  localities:
+    Bangalore:
+      - "Koramangala"
+      - "Indiranagar"
+      - "HSR Layout"
+      - "Whitefield"
+      - "Electronic City"
+      - "MG Road"
+      - "Jayanagar"
+      - "JP Nagar"
+      - "Marathahalli"
+      - "BTM Layout"
+    Mumbai:
+      - "Andheri"
+      - "Bandra"
+      - "Juhu"
+      - "Powai"
+      - "Dadar"
+      - "Lower Parel"
+      - "Worli"
+      - "Malad"
+    Delhi:
+      - "Connaught Place"
+      - "Karol Bagh"
+      - "Saket"
+      - "Dwarka"
+      - "Rohini"
+      - "Janakpuri"
+    Chennai:
+      - "T. Nagar"
+      - "Anna Nagar"
+      - "Adyar"
+      - "Velachery"
+      - "Tambaram"
+    Hyderabad:
+      - "Banjara Hills"
+      - "HITEC City"
+      - "Jubilee Hills"
+      - "Madhapur"
+      - "Secunderabad"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DIMENSION GENERATION — Dynamic Entity Pool Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+dimensions:
+  customer:
+    pool_size: 50
+    kyc_statuses: ["Verified", "Pending", "Expired", "Rejected"]
+    kyc_status_weights: [0.70, 0.15, 0.10, 0.05]
+    pep_probability: 0.05              # 5% chance a customer is PEP
+    country_codes: ["IN"]              # Expandable to multi-country
+    risk_score_range:
+      min: 0.01
+      max: 0.30                        # Initial risk — agents will adjust
+
+  account:
+    pool_size: 80
+    types: ["Savings", "Current", "NRI", "Fixed Deposit"]
+    type_weights: [0.50, 0.30, 0.10, 0.10]
+    balance_range:
+      min: 1000
+      max: 5000000
+    dormancy_threshold_days: 90        # Account dormant if no txn in this many days
+
+  merchant:
+    pool_size: 20
+    categories:
+      - name: "Groceries"
+        mcc_code: "5411"
+        risk_tier: "Low"
+      - name: "Electronics"
+        mcc_code: "5732"
+        risk_tier: "Low"
+      - name: "Apparel"
+        mcc_code: "5651"
+        risk_tier: "Low"
+      - name: "Restaurants"
+        mcc_code: "5812"
+        risk_tier: "Low"
+      - name: "Gas Stations"
+        mcc_code: "5541"
+        risk_tier: "Low"
+      - name: "Jewelry"
+        mcc_code: "5944"
+        risk_tier: "Medium"
+      - name: "Money Transfer"
+        mcc_code: "6051"
+        risk_tier: "High"
+      - name: "Gambling"
+        mcc_code: "7995"
+        risk_tier: "High"
+      - name: "Miscellaneous"
+        mcc_code: "5999"
+        risk_tier: "High"
+    high_risk_mcc_codes: ["5999", "6051", "7995"]
+
+  device:
+    pool_size: 30
+    types: ["MOBI", "WEB", "TAB", "POS"]
+    type_weights: [0.50, 0.30, 0.10, 0.10]
+
+  ip_address:
+    pool_size: 40
+    vpn_probability: 0.08
+    tor_probability: 0.03
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AML SCENARIO PARAMETERS (Templates — not hard-coded payloads)
+# ─────────────────────────────────────────────────────────────────────────────
+scenarios:
+  # How often to inject AML scenarios into normal traffic
+  injection_probability: 0.15          # 15% of cycles include an AML event
+
+  structuring:
+    enabled: true
+    deposit_count_range:
+      min: 3
+      max: 8
+    individual_amount_range:
+      min: 500000                      # ₹5 Lakhs
+      max: 990000                      # ₹9.9 Lakhs (below ₹10L threshold)
+    total_threshold: 1000000           # ₹10 Lakhs CTR reporting threshold
+    time_spread_hours: 8               # Spread deposits over this many hours
+    geo_pool_size: 5                   # Use this many different locations
+    preferred_channels: ["Branch", "ATM", "Mobile", "UPI"]
+
+  circular_flow:
+    enabled: true
+    hop_count_range:
+      min: 3
+      max: 7
+    amount_range:
+      min: 1000000                     # ₹10 Lakhs
+      max: 5000000                     # ₹50 Lakhs
+    amount_variation_pct: 0.02         # Max 2% variation between hops
+    time_window_minutes: 60
+    inter_hop_delay_seconds:
+      min: 2
+      max: 30
+
+  shadow_link:
+    enabled: true
+    shared_device_probability: 0.15    # 15% chance two customers share a device
+    shared_ip_probability: 0.10        # 10% chance two customers share an IP
+    linked_txn_amount_range:
+      min: 500000
+      max: 5000000
+    time_proximity_hours: 48           # Shadow-linked txns within this window
+
+  velocity_spike:
+    enabled: true
+    spike_multiplier: 5.0              # Spike = normal velocity × this
+    spike_txn_count_range:
+      min: 8
+      max: 20
+    spike_duration_hours: 8
+    sigma_threshold: 3.0               # Flag if > 3σ from baseline
+
+  shell_merchant:
+    enabled: true
+    shell_score_threshold: 0.70
+    counterparty_concentration: 0.80   # 80%+ volume from few customers = shell
+    merchant_age_days_max: 90          # Recently registered + high volume = suspicious
+    high_volume_threshold: 2000000     # ₹20 Lakhs
+
+  dormant_activation:
+    enabled: true
+    dormancy_days: 90                  # No activity for this many days
+    activation_txn_count_range:
+      min: 3
+      max: 10
+    activation_amount_range:
+      min: 500000
+      max: 3000000
+    activation_window_hours: 24
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EVENTHOUSE SCHEMA — Enhanced fact_transactions columns
+# ─────────────────────────────────────────────────────────────────────────────
+schema:
+  fact_transactions:
+    # Original V1 columns
+    - { name: "transaction_id",       type: "string" }
+    - { name: "customer_id",          type: "string" }
+    - { name: "customer_name",        type: "string" }
+    - { name: "account_id",           type: "string" }
+    - { name: "amount",               type: "real" }
+    - { name: "timestamp",            type: "datetime" }
+    - { name: "channel",              type: "string" }
+    - { name: "device_id",            type: "string" }
+    - { name: "ip_address",           type: "string" }
+    - { name: "geo_location",         type: "string" }
+    - { name: "merchant_id",          type: "string" }
+    - { name: "mcc_code",             type: "string" }
+    - { name: "counterparty_account", type: "string" }
+    - { name: "transaction_type",     type: "string" }
+    # V2 enhancements
+    - { name: "ingestion_timestamp",  type: "datetime" }
+    - { name: "processing_status",    type: "string" }
+    - { name: "risk_flag",            type: "string" }
+    - { name: "pattern_hash",         type: "string" }
+    - { name: "scenario_id",          type: "string" }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RISK SCORING ENGINE — Config-Driven Weights (L6)
+# ─────────────────────────────────────────────────────────────────────────────
+scoring:
+  weights:
+    f1_agent_consensus: 35
+    f2_graph_centrality: 20
+    f3_dna_deviation: 20
+    f4_historical_risk: 15
+    f5_watchlist_match: 10
+
+  tiers:
+    low: 30
+    medium: 60
+    high: 80
+    # Score 0-30 = LOW, 31-60 = MEDIUM, 61-80 = HIGH, 81-100 = CRITICAL
+
+  recalibration_frequency_hours: 24
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BEHAVIORAL DNA — 12-Dimension Profiling (L3)
+# ─────────────────────────────────────────────────────────────────────────────
+dna:
+  dimensions: 12
+  dimension_names:
+    - "velocity"
+    - "amount_profile"
+    - "temporal_pattern"
+    - "counterparty_diversity"
+    - "channel_mix"
+    - "geographic_spread"
+    - "amount_entropy"
+    - "round_number_ratio"
+    - "counterparty_recurrence"
+    - "dormancy_burst"
+    - "cross_border_ratio"
+    - "device_switching"
+
+  time_windows: ["1h", "1d", "7d", "30d", "90d"]
+  drift_threshold_sigma: 2.5
+  refresh_frequency_minutes: 30
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AI AGENT THRESHOLDS (L5) — All configurable, no magic numbers
+# ─────────────────────────────────────────────────────────────────────────────
+agents:
+  structuring:
+    amount_threshold: 1000000          # ₹10 Lakhs CTR threshold
+    min_txn_count: 3
+    time_window_hours: 24
+    min_confidence: 0.60
+
+  velocity:
+    sigma_threshold: 3.0
+    baseline_window_days: 30
+    min_confidence: 0.60
+
+  geo_temporal:
+    max_travel_minutes: 120            # Impossible travel if < this time for distance
+    min_distance_km: 50                # Only flag if locations are this far apart
+    min_confidence: 0.60
+
+  circular_flow:
+    min_hops: 3
+    max_hops: 10
+    time_window_hours: 1
+    amount_tolerance_pct: 5.0          # Allow 5% amount variation in cycle
+    min_confidence: 0.70
+
+  shadow_link:
+    max_hop_depth: 3
+    min_shared_attributes: 1           # Flag if sharing >= this many attributes
+    min_confidence: 0.60
+
+  shell_entity:
+    shell_score_threshold: 0.70
+    min_concentration_ratio: 0.80      # 80%+ volume from few sources
+    min_merchant_age_days: 30          # New merchants are more suspicious
+    min_confidence: 0.60
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SAR GENERATION (L7)
+# ─────────────────────────────────────────────────────────────────────────────
+sar:
+  model: "gpt-4.1"
+  max_tokens: 2000
+  temperature: 0.2
+  output_format: "structured_json"
+  content_safety_enabled: true
+
+  # Secret names in Key Vault
+  aoai_api_key_secret: "aoai-api-key"
+  aoai_endpoint_secret: "aoai-endpoint"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SELF-LEARNING FEEDBACK LOOP (L9)
+# ─────────────────────────────────────────────────────────────────────────────
+feedback:
+  recalibration_schedule: "daily"
+  min_dispositions_for_recalibration: 10
+  weight_adjustment_step: 5.0          # Max % to adjust weight per cycle
+  threshold_adjustment_step: 10.0      # Max % to adjust threshold per cycle
+  disposition_types: ["TRUE_POSITIVE", "FALSE_POSITIVE", "ESCALATE"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OBSERVABILITY & MONITORING
+# ─────────────────────────────────────────────────────────────────────────────
+monitoring:
+  custom_metrics_prefix: "sentinel"
+  log_level: "INFO"
+  metrics:
+    - "detection_latency_ms"
+    - "transactions_per_second"
+    - "alerts_per_hour"
+    - "agent_hit_rate"
+    - "false_positive_rate"
+    - "sar_generation_time_ms"
+    - "dna_drift_magnitude"
+    - "pipeline_execution_time_s"

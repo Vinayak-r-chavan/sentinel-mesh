@@ -1,0 +1,53 @@
+{
+  "name": "SentinelMesh_L9_Recalibration",
+  "properties": {
+    "description": "Orchestrates Layer 9 Self-Learning Recalibration. Automatically executes the recalibration notebook to adjust scoring weights and agent thresholds based on analyst dispositions.",
+    "activities": [
+      {
+        "name": "Run_L9_Recalibration",
+        "type": "Notebook",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.02:00:00",
+          "retry": 1,
+          "retryIntervalInSeconds": 60,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "notebook": {
+            "referenceName": "L9_Recalibration",
+            "type": "NotebookReference"
+          },
+          "parameters": {
+            "EVENTHOUSE_CLUSTER_URI": {
+              "value": "@pipeline().parameters.EVENTHOUSE_CLUSTER_URI",
+              "type": "Expression"
+            },
+            "EVENTHOUSE_DATABASE": {
+              "value": "@pipeline().parameters.EVENTHOUSE_DATABASE",
+              "type": "Expression"
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "EVENTHOUSE_CLUSTER_URI": {
+        "type": "string",
+        "defaultValue": ""
+      },
+      "EVENTHOUSE_DATABASE": {
+        "type": "string",
+        "defaultValue": ""
+      }
+    },
+    "annotations": [
+      "AML",
+      "SentinelMesh",
+      "Layer9",
+      "SelfLearning"
+    ]
+  }
+}

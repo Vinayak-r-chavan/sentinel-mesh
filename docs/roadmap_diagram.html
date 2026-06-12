@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SENTINEL MESH — POC Implementation Roadmap</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    background: #0f1016;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  /* Fixed size canvas ensures pixel-perfect arrow alignment */
+  .canvas {
+    width: 1200px;
+    height: 720px;
+    background: #0a0b10;
+    position: relative;
+    border-radius: 12px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+
+  /* Header area */
+  .header {
+    padding: 24px 32px 0 32px;
+  }
+  .header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header p {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 4px;
+  }
+
+  /* ── Platform Group Borders ── */
+  .platform-group {
+    position: absolute;
+    border: 1.5px dashed #334155;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.2);
+    z-index: 1;
+    transition: all 0.3s ease;
+  }
+  .platform-group:hover {
+    border-color: #475569;
+    background: rgba(15, 23, 42, 0.4);
+  }
+  .platform-label {
+    position: absolute;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    background: #0a0b10;
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid #334155;
+    letter-spacing: 0.5px;
+    z-index: 4;
+  }
+
+  /* ── Node/Box Styling ── */
+  .node {
+    position: absolute;
+    border-radius: 8px;
+    background: #131520;
+    border: 1px solid #1e293b;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 16px;
+    z-index: 3;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+  .node:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .node .step-tag {
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #64748b;
+    margin-bottom: 2px;
+  }
+
+  .node .title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #f8fafc;
+  }
+
+  .node .desc {
+    font-size: 9.5px;
+    font-weight: 400;
+    color: #64748b;
+    margin-top: 4px;
+    line-height: 1.3;
+  }
+
+  /* Premium Themes by Step Type */
+  .theme-ingestion {
+    border-left: 4px solid #06b6d4;
+  }
+  .theme-ingestion:hover { border-color: #22d3ee; box-shadow: 0 0 15px rgba(6, 182, 212, 0.2); }
+
+  .theme-storage {
+    border-left: 4px solid #8b5cf6;
+  }
+  .theme-storage:hover { border-color: #a78bfa; box-shadow: 0 0 15px rgba(139, 92, 246, 0.2); }
+
+  .theme-ontology {
+    border-left: 4px solid #00d4ff;
+  }
+  .theme-ontology:hover { border-color: #38bdf8; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }
+
+  .theme-graph {
+    border-left: 4px solid #d946ef;
+  }
+  .theme-graph:hover { border-color: #f0abfc; box-shadow: 0 0 15px rgba(217, 70, 239, 0.2); }
+
+  .theme-agent {
+    border-left: 4px solid #e11d48;
+  }
+  .theme-agent:hover { border-color: #fb7185; box-shadow: 0 0 15px rgba(225, 29, 72, 0.2); }
+
+  .theme-copilot {
+    border-left: 4px solid #10b981;
+  }
+  .theme-copilot:hover { border-color: #34d399; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
+
+  .theme-feedback {
+    border-left: 4px solid #f59e0b;
+  }
+  .theme-feedback:hover { border-color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); }
+
+  /* ── SVG Arrows Layer ── */
+  .arrows {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* ── Edge labels on lines ── */
+  .edge-label {
+    position: absolute;
+    font-size: 8.5px;
+    font-weight: 600;
+    background: #131520;
+    color: #94a3b8;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #1e293b;
+    z-index: 5;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Status badges */
+  .status-badge {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 7.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .status-badge.todo {
+    background: rgba(100, 116, 139, 0.15);
+    color: #94a3b8;
+    border: 1px solid #475569;
+  }
+  .status-badge.current {
+    background: rgba(30, 64, 175, 0.3);
+    color: #60a5fa;
+    border: 1px solid #2563eb;
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.3);
+  }
+  .status-badge.done {
+    background: rgba(6, 78, 59, 0.3);
+    color: #34d399;
+    border: 1px solid #059669;
+  }
+</style>
+</head>
+<body>
+
+<div class="canvas">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🛡️ SENTINEL MESH — POC Implementation Roadmap</h1>
+    <p>Follow this step-by-step visual workflow to deploy all 9 AML layers native on Microsoft Fabric.</p>
+  </div>
+
+  <!-- ══════════ GROUP CONTAINERS ══════════ -->
+  <!-- Phase 1 Group -->
+  <div class="platform-group" style="top: 110px; left: 35px; width: 345px; height: 350px;"></div>
+  <div class="platform-label" style="top: 102px; left: 45px;">Phase 1: Workspace & Ingestion</div>
+
+  <!-- Phase 2 Group -->
+  <div class="platform-group" style="top: 110px; left: 410px; width: 345px; height: 350px;"></div>
+  <div class="platform-label" style="top: 102px; left: 420px;">Phase 2: Semantic Brain & Storage</div>
+
+  <!-- Phase 3 Group -->
+  <div class="platform-group" style="top: 110px; left: 785px; width: 380px; height: 350px;"></div>
+  <div class="platform-label" style="top: 102px; left: 795px;">Phase 3: Intelligence & Swarm</div>
+
+  <!-- Phase 4 Group -->
+  <div class="platform-group" style="top: 490px; left: 35px; width: 1130px; height: 185px;"></div>
+  <div class="platform-label" style="top: 482px; left: 45px;">Phase 4: Action, Experience & Feedback</div>
+
+
+  <!-- ══════════ SVG CONNECTOR ARROWS ══════════ -->
+  <svg class="arrows">
+    <defs>
+      <!-- Normal Arrowhead -->
+      <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0,0 8,3 0,6" fill="#334155"/>
+      </marker>
+      <!-- Active Arrowhead -->
+      <marker id="arrow-active" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0,0 8,3 0,6" fill="#60a5fa"/>
+      </marker>
+      <!-- Completed Arrowhead -->
+      <marker id="arrow-done" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0,0 8,3 0,6" fill="#34d399"/>
+      </marker>
+    </defs>
+
+    <!-- Step 1 → Step 2 -->
+    <path d="M 125,240 L 125,285" stroke="#34d399" stroke-width="1.8" fill="none" marker-end="url(#arrow-done)" />
+
+    <!-- Step 2 → Step 3 -->
+    <path d="M 205,335 C 240,335 240,240 270,240 L 280,240" stroke="#60a5fa" stroke-width="1.8" fill="none" marker-end="url(#arrow-active)" />
+
+    <!-- Step 3 → Step 4 -->
+    <path d="M 370,335 C 390,335 390,240 410,240 L 420,240" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Step 4 → Step 5 -->
+    <path d="M 500,335 C 540,335 540,240 570,240 L 580,240" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Step 5 → Step 6 -->
+    <path d="M 670,335 C 720,335 720,240 760,240 L 795,240" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Step 6 → Step 7 -->
+    <path d="M 945,240 L 970,240" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Step 7 → Step 8 -->
+    <path d="M 1060,285 Q 1060,335 1020,335 L 945,335" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Step 8 → Step 9 (Transition down to Phase 4) -->
+    <path d="M 870,380 L 870,440 Q 870,460 850,460 L 140,460 Q 125,460 125,480 L 125,530" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Step 9 → Step 10 -->
+    <path d="M 215,580 L 265,580" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Step 10 → Step 11 -->
+    <path d="M 435,580 L 485,580" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Step 11 → Step 12 -->
+    <path d="M 655,580 L 705,580" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+
+    <!-- Step 12 → Step 13 -->
+    <path d="M 875,580 L 925,580" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+
+  </svg>
+
+
+  <!-- ══════════ EDGE PATH LABELS ══════════ -->
+  <div class="edge-label" style="top: 240px; left: 240px;">Connection Details</div>
+  <div class="edge-label" style="top: 335px; left: 388px;">Table Schema</div>
+  <div class="edge-label" style="top: 240px; left: 540px;">Semantic Mappings</div>
+  <div class="edge-label" style="top: 240px; left: 720px;">GQL Traversals</div>
+  <div class="edge-label" style="top: 240px; left: 958px;">Alert Output</div>
+  <div class="edge-label" style="top: 460px; left: 500px;">Scoring Output</div>
+
+
+  <!-- ══════════ PHASE 1 NODES ══════════ -->
+  <!-- Step 1 -->
+  <div class="node theme-ingestion" style="top: 140px; left: 50px; width: 155px; height: 100px;">
+    <div class="step-tag">Step 1 — INGEST</div>
+    <div class="title">Fabric Workspace</div>
+    <div class="desc">Create workspace on Fabric Capacity. Set license to Trial/F-SKU.</div>
+    <div class="status-badge done">Done</div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="node theme-ingestion" style="top: 285px; left: 50px; width: 155px; height: 100px;">
+    <div class="step-tag">Step 2 — INGEST</div>
+    <div class="title">Eventstream Setup</div>
+    <div class="desc">Create eventstream `es_transactions` & custom app input node.</div>
+    <div class="status-badge done">Done</div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="node theme-ingestion" style="top: 190px; left: 215px; width: 155px; height: 100px;">
+    <div class="step-tag">Step 3 — STREAM</div>
+    <div class="title">Local Simulator</div>
+    <div class="desc">Run `simulator.py` to stream transactions to custom endpoint.</div>
+    <div class="status-badge current">Active</div>
+  </div>
+
+
+  <!-- ══════════ PHASE 2 NODES ══════════ -->
+  <!-- Step 4 -->
+  <div class="node theme-storage" style="top: 190px; left: 425px; width: 155px; height: 100px;">
+    <div class="step-tag">Step 4 — STORE</div>
+    <div class="title">Eventhouse DB</div>
+    <div class="desc">Build KQL DB schemas for hot transactions table.</div>
+    <div class="status-badge todo">Todo</div>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="node theme-storage" style="top: 285px; left: 425px; width: 155px; height: 100px;">
+    <div class="step-tag">Step 5 — STORE</div>
+    <div class="title">Lakehouse Delta</div>
+    <div class="desc">Deploy Spark delta tables for KYC, account and merchant.</div>
+    <div class="status-badge todo">Todo</div>
+  </div>
+
+  <!-- Step 6 -->
+  <div class="node theme-ontology" style="top: 190px; left: 590px; width: 155px; height: 100px;">
+    <div class="step-tag">Step 6 — BRAIN</div>
+    <div class="title">IQ Ontology Core</div>
+    <div class="desc">Bind physical tables into customer & account entity schemas.</div>
+    <div class="status-badge todo">Todo</div>
+  </div>
+
+  <!-- Step 7 -->
+  <div class="node theme-ontology" style="top: 285px; left: 590px; width: 155px; height: 100px;">
+    <div class="step-tag">Step 7 — BRAIN</div>
+    <div class="title">Behavioral DNA</div>
+    <div class="desc">Run PySpark notebook to compute drift vectors.</div>
+    <div class="status-badge todo">Todo</div>
+  </div>
+
+
+  <!-- ══════════ PHASE 3 NODES ══════════ -->
+  <!-- Step 8 -->
+  <div class="node theme-graph" style="top: 190px; left: 800px; width: 145px; height: 100px;">
+    <div class="step-tag">Step 8 — CONNECT</div>
+    <div class="title">Fabric Graph</div>
+    <div class="desc">Set up temporal relationships using GQL query files.</div>
+    <div class="status-badge todo">Todo</div>
+  </div>
+
+  <!-- Step 9 -->
+  <div class="node theme-agent" style="top: 190px; left: 970px; width: 180px; height: 100px;">
+    <div class="step-tag">Step 9 — SWARM</div>
+    <div class="title">6 Swarm Agents</div>
+    <div class="desc">Structuring, velocity, shadow links, and travel anomaly KQL/GQL.</div>
+    <div class="status-badge todo">Todo</div>
+  </div>
+
+  <!-- Step 10 -->
+  <div class="node theme-agent" style="top: 285px; left: 800px; width: 145px; height: 100px;">
+    <div class="step-tag">Step 10 — SWARM</div>
+    <div class="title">Orchestrator</div>
+    <div class="desc">Ensemble correlation & consensus risk scoring function.</div>
+    <div class="status-badge todo">Todo</div>
+  </div>
+
+
+  <!-- ══════════ PHASE 4 NODES ══════════ -->
+  <!-- Step 11 -->
+  <div class="node theme-copilot" style="top: 535px; left: 50px; width: 165px; height: 100px;">
+    <div class="step-tag">Step 11 — INVESTIGATE</div>
+    <div class="title">AML Copilot</div>
+    <div class="desc">Set up Data Agent grounded in AML Ontology for NL queries.</div>
+    <div class="status-badge todo">Todo</div>
+  </div>
+
+  <!-- Step 12 -->
+  <div class="node theme-copilot" style="top: 535px; left: 265px; width: 170px; height: 100px;">
+    <div class="step-tag">Step 12 — COMPLIANCE</div>
+    <div class="title">Auto-SAR narrative</div>
+    <div class="desc">Integrate LLM to draft Suspicious Activity reports.</div>
+    <div class="status-badge todo">Todo</div>
+  </div>
+
+  <!-- Step 13 -->
+  <div class="node theme-agent" style="top: 535px; left: 485px; width: 170px; height: 100px;">
+    <div class="step-tag">Step 13 — ACTION</div>
+    <div class="title">Action Gateway</div>
+    <div class="desc">Configure Activator rules to auto-freeze accounts via API.</div>
+    <div class="status-badge todo">Todo</div>
+  </div>
+
+  <!-- Step 14 -->
+  <div class="node theme-feedback" style="top: 535px; left: 705px; width: 170px; height: 100px;">
+    <div class="step-tag">Step 14 — EVOLVE</div>
+    <div class="title">Self-Learning Loop</div>
+    <div class="desc">Auto-adjust weights based on analyst disposition inputs.</div>
+    <div class="status-badge todo">Todo</div>
+  </div>
+
+  <!-- Step 15 -->
+  <div class="node theme-copilot" style="top: 535px; left: 925px; width: 220px; height: 100px;">
+    <div class="step-tag">Step 15 — SUBMIT</div>
+    <div class="title">Demo & Final Walkthrough</div>
+    <div class="desc">Verify the end-to-end Raj Kumar transaction flow and packaging.</div>
+    <div class="status-badge todo">Todo</div>
+  </div>
+
+</div>
+
+</body>
+</html>

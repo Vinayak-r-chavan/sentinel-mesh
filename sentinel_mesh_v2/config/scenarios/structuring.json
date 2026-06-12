@@ -1,0 +1,39 @@
+{
+  "scenario_id": "structuring",
+  "name": "Structuring / Smurfing",
+  "description": "Multiple deposits below the CTR reporting threshold that collectively exceed it. Designed to evade Currency Transaction Reports.",
+  "aml_category": "Placement",
+  "risk_level": "HIGH",
+
+  "parameters": {
+    "deposit_count": {
+      "min": 3,
+      "max": 8,
+      "description": "Number of sub-threshold deposits in the structuring sequence"
+    },
+    "individual_amount": {
+      "min": 500000,
+      "max": 990000,
+      "description": "Each deposit stays below the CTR threshold (INR 10 Lakhs)"
+    },
+    "total_threshold": 1000000,
+    "time_spread_hours": 8,
+    "geo_pool_size": 5,
+    "preferred_channels": ["Branch", "ATM", "Mobile", "UPI"],
+    "round_number_avoidance": true,
+    "amount_jitter_pct": 5.0
+  },
+
+  "detection_hints": {
+    "primary_agent": "structuring_sentinel",
+    "supporting_agents": ["velocity_anomaly"],
+    "expected_confidence_range": [0.75, 0.98],
+    "key_indicators": [
+      "Multiple deposits in single day",
+      "Each below reporting threshold",
+      "Total exceeds threshold",
+      "Different locations same city",
+      "Non-round amounts clustering near threshold"
+    ]
+  }
+}

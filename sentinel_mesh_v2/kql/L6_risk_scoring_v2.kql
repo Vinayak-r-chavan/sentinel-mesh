@@ -1,0 +1,113 @@
+// ============================================================================
+// L6: ADAPTIVE RISK SCORING ENGINE
+// SENTINEL MESH V2 — 5-Factor Weighted Risk Scoring & Auto-Alerting
+// ============================================================================
+//
+// Run this entire script in your Fabric Eventhouse KQL Query Editor.
+// This sets up:
+//   1. Helper queries to load config-driven scoring weights
+//   2. The main generate_composite_alerts() function to write fact_alerts rows
+//
+// ============================================================================
+
+.create-or-alter function with (folder = "SentinelMesh/L6") generate_composite_alerts() {
+    // --- 1. Load config-driven weights & thresholds ---
+    let w_f1 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f1" | project config_value), 35.0) / 100.0;
+    let w_f2 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f2" | project config_value), 20.0) / 100.0;
+    let w_f3 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f3" | project config_value), 20.0) / 100.0;
+    let w_f4 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f4" | project config_value), 15.0) / 100.0;
+    let w_f5 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f5" | project config_value), 10.0) / 100.0;
+    // Tiers
+    let tier_low = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.tier.low" | project config_value), 30.0);
+    let tier_med = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.tier.medium" | project config_value), 60.0);
+    let tier_high = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.tier.high" | project config_value), 80.0);
+    // Max PageRank for scaling
+    let max_pr = coalesce(toscalar(fact_graph_communities | summarize max(pagerank_score)), 0.1);
+    let max_pr_val = iif(max_pr == 0.0, 0.0001, max_pr);
+    // --- 2. Gather all triggered agent events ---
+    let TriggeredAgents = union
+        agent_structuring_detect(),
+        agent_velocity_detect(),
+        agent_geotemporal_detect(),
+        agent_circularflow_detect(),
+        agent_shadowlink_detect(),
+        agent_shell_detect();
+    // Summarize agent findings per customer (Consensus check)
+    let AgentConsensus = TriggeredAgents
+        | summarize 
+            AvgAgentConfidence = avg(confidence),
+            AgentNames = make_set(agent_name),
+            AgentReasons = make_set(reason),
+            AllRelatedTxs = make_list(related_transactions)
+            by customer_id, customer_name;
+    // --- 3. Pull DNA baseline & drift ---
+    let LatestDNA = dim_behavioral_dna
+        | summarize arg_max(computed_at, drift_score) by customer_id
+        | project customer_id, drift_score;
+    // --- 4. Pull Graph Centrality (PageRank) ---
+    let LatestGraph = fact_graph_communities
+        | summarize arg_max(computed_at, pagerank_score) by customer_id
+        | project customer_id, pagerank_score;
+    // --- 5. Pull Historical Alerts count ---
+    // Counts alerts triggered in the last 30 days
+    let HistAlerts = fact_alerts
+        | where triggered_at >= now() - 30d
+        | summarize AlertCount = count() by customer_id;
+    // --- 6. Pull Watchlist status from Customer Master ---
+    let Watchlist = dim_customer
+        | project customer_id, pep_flag;
+    // --- 7. Calculate 5-Factor Risk Score and generate alerts ---
+    AgentConsensus
+    | join kind=leftouter LatestDNA on customer_id
+    | join kind=leftouter LatestGraph on customer_id
+    | join kind=leftouter HistAlerts on customer_id
+    | join kind=leftouter Watchlist on customer_id
+    | extend 
+        // Factor 1: Agent Consensus (0 - 100)
+        F1 = coalesce(AvgAgentConfidence * 100.0, 0.0),
+        // Factor 2: Graph Centrality (0 - 100, normalized against max PageRank)
+        F2 = coalesce(min_of(toreal(pagerank_score) / max_pr_val * 100.0, 100.0), 0.0),
+        // Factor 3: DNA Deviation (0 - 100, normalized against 10.0 drift max)
+        F3 = coalesce(min_of(toreal(drift_score) / 10.0 * 100.0, 100.0), 0.0),
+        // Factor 4: Historical Alerts (0 - 100, normalized against 5 alerts max)
+        F4 = coalesce(min_of(toreal(AlertCount) / 5.0 * 100.0, 100.0), 0.0),
+        // Factor 5: PEP Watchlist Match (100 if true, 0 if false)
+        F5 = iif(pep_flag == true, 100.0, 0.0)
+    | extend 
+        CompositeScore = round((F1 * w_f1) + (F2 * w_f2) + (F3 * w_f3) + (F4 * w_f4) + (F5 * w_f5), 2)
+    | extend 
+        RiskTier = iif(CompositeScore <= tier_low, "LOW",
+                   iif(CompositeScore <= tier_med, "MEDIUM",
+                   iif(CompositeScore <= tier_high, "HIGH", "CRITICAL")))
+    | extend 
+        alert_id = tostring(new_guid()),
+        agent_name = strcat(tostring(array_length(AgentNames)), " Agents Consensus"),
+        reason = array_strcat(AgentReasons, " | "),
+        status = "ACTIVE",
+        disposition = "PENDING",
+        triggered_at = now(),
+        resolved_at = datetime(null),
+        related_transactions = AllRelatedTxs,
+        cross_correlations = pack(
+            "agent_list", AgentNames,
+            "pagerank_score", pagerank_score,
+            "dna_drift_score", drift_score,
+            "historical_alerts_30d", coalesce(AlertCount, 0),
+            "pep_watchlist_match", pep_flag
+        )
+    | project 
+        alert_id,
+        customer_id,
+        customer_name,
+        agent_name,
+        confidence = AvgAgentConfidence,
+        reason,
+        risk_score = CompositeScore,
+        risk_tier = RiskTier,
+        status,
+        disposition,
+        triggered_at,
+        resolved_at,
+        related_transactions,
+        cross_correlations
+}

@@ -1,0 +1,26 @@
+# Environments
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDEs
+.vscode/
+.idea/
+.gemini/
+
+# Archives/Builds
+*.zip
+*.tar.gz
+
+# Project-specific Exclusions (Unused/Frontend/Data files)
+sentinel_mesh_v2/dashboard/
+sentinel_mesh_v2/data_simulator/generated_data/
+*.docx
+*.pptx

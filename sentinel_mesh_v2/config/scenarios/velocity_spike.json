@@ -1,0 +1,38 @@
+{
+  "scenario_id": "velocity_spike",
+  "name": "Velocity Spike / Burst Activity",
+  "description": "A customer suddenly shows transaction volume or amounts far exceeding their normal behavioral DNA baseline, indicating potential money movement.",
+  "aml_category": "Placement",
+  "risk_level": "HIGH",
+
+  "parameters": {
+    "spike_multiplier": 5.0,
+    "spike_txn_count": {
+      "min": 8,
+      "max": 20,
+      "description": "Number of transactions in the burst"
+    },
+    "spike_amount_range": {
+      "min": 100000,
+      "max": 2000000,
+      "description": "Amount per transaction during spike"
+    },
+    "spike_duration_hours": 8,
+    "sigma_threshold": 3.0,
+    "preferred_channels": ["Mobile", "UPI", "Branch"],
+    "mixed_channels": true
+  },
+
+  "detection_hints": {
+    "primary_agent": "velocity_anomaly_detector",
+    "supporting_agents": ["structuring_sentinel", "geo_temporal"],
+    "expected_confidence_range": [0.70, 0.95],
+    "key_indicators": [
+      "Transaction count far exceeds daily average",
+      "Total amount far exceeds daily average",
+      "Concentrated in short time window",
+      "Deviation from behavioral DNA baseline",
+      "Multiple channels used in burst"
+    ]
+  }
+}

@@ -1,0 +1,158 @@
+// ============================================================================
+// L5: AI AGENT SWARM — NATIVE KQL DETECTION ENGINES
+// SENTINEL MESH V2 — 100% Config-Driven, High-Performance Streaming Analytics
+// ============================================================================
+//
+// Run this entire script in your Fabric Eventhouse KQL Query Editor.
+// This creates the 6 AI detection agent functions.
+//
+// ============================================================================
+
+
+// ── 1. AGENT: STRUCTURING SENTINEL ──────────────────────────────────────────
+// Detects patterns of depositing/transferring amounts just below reporting 
+// thresholds (e.g. ₹10L CTR threshold) to avoid compliance triggers.
+.create-or-alter function with (folder = "SentinelMesh/L5") agent_structuring_detect() {
+    let limit = toreal(toscalar(dim_adaptive_config | where config_key == "agent.structuring.amount_threshold" | project config_value));
+    let limit_threshold = iif(isnull(limit), 1000000.0, limit); // Fallback ₹10L
+    let window_hours = toscalar(dim_adaptive_config | where config_key == "dna.current_window_days" | project config_value);
+    let allowed_window = iif(isnull(window_hours), 1.0, window_hours) * 1d; // Fallback 1 day
+    fact_transactions
+    | where tolower(transaction_type) in ("deposit", "transfer", "payment")
+    | summarize 
+        TotalAmount = sum(amount),
+        MaxSingleAmount = max(amount),
+        TxCount = count(),
+        TxList = make_list(transaction_id)
+        by customer_id, customer_name, bin(timestamp, allowed_window)
+    | where TotalAmount >= limit_threshold 
+      and TxCount > 1 
+      and MaxSingleAmount < limit_threshold
+    | extend confidence = round(min_of(toreal(TotalAmount) / (limit_threshold * 1.5), 0.99), 2)
+    | project 
+        customer_id, 
+        customer_name, 
+        agent_name = "Structuring Sentinel", 
+        confidence, 
+        reason = strcat("Customer structured ", tostring(TxCount), " transactions totaling INR ", tostring(TotalAmount), " (individual max: INR ", tostring(MaxSingleAmount), ", threshold: INR ", tostring(limit_threshold), ")"),
+        related_transactions = TxList
+}
+
+
+// ── 2. AGENT: VELOCITY ANOMALY DETECTOR ──────────────────────────────────────
+// Detects statistical outliers in a customer's rolling transaction velocity 
+// by comparing daily activity against their multi-resolution baseline DNA.
+.create-or-alter function with (folder = "SentinelMesh/L5") agent_velocity_detect() {
+    let sigma_threshold = toreal(toscalar(dim_adaptive_config | where config_key == "agent.velocity.sigma" | project config_value));
+    let drift_limit = iif(isnull(sigma_threshold), 3.0, sigma_threshold); // Fallback 3.0
+    dim_behavioral_dna
+    | summarize arg_max(computed_at, *) by customer_id
+    | where drift_score >= drift_limit
+    | join kind=inner (dim_customer | project customer_id, name) on customer_id
+    | extend confidence = round(min_of(toreal(drift_score) / (drift_limit * 1.8), 0.95), 2)
+    | project 
+        customer_id, 
+        customer_name = name, 
+        agent_name = "Velocity Anomaly Detector", 
+        confidence, 
+        reason = strcat("Customer behavior drifted by ", tostring(drift_score), " sigma from their 30-day baseline DNA (limit: ", tostring(drift_limit), ")"),
+        related_transactions = dynamic([])
+}
+
+
+// ── 3. AGENT: GEO-TEMPORAL ANALYZER ──────────────────────────────────────────
+// Detects "impossible travel" patterns, where a customer accesses their account 
+// from distinct geographic locations in a physically impossible timeframe.
+.create-or-alter function with (folder = "SentinelMesh/L5") agent_geotemporal_detect() {
+    let travel_limit = toscalar(dim_adaptive_config | where config_key == "agent.geo.travel_minutes" | project config_value);
+    let allowed_minutes = iif(isnull(travel_limit), 120.0, travel_limit); // Fallback 2 hours
+    fact_transactions
+    | order by customer_id asc, timestamp asc
+    | serialize
+    | extend prev_customer = prev(customer_id)
+    | extend prev_time = prev(timestamp)
+    | extend prev_loc = prev(geo_location)
+    | extend prev_tx_id = prev(transaction_id)
+    | where prev_customer == customer_id and prev_loc != geo_location and isnotempty(prev_loc)
+    | extend time_diff_minutes = datetime_diff('minute', timestamp, prev_time)
+    | where time_diff_minutes <= allowed_minutes
+    | extend confidence = round(min_of(1.0 - (toreal(time_diff_minutes) / allowed_minutes), 0.95), 2)
+    | project 
+        customer_id, 
+        customer_name, 
+        agent_name = "Geo-Temporal Analyzer", 
+        confidence, 
+        reason = strcat("Impossible travel detected: Transacted from '", prev_loc, "' and '", geo_location, "' within ", tostring(time_diff_minutes), " minutes (allowed window: ", tostring(allowed_minutes), " mins)"),
+        related_transactions = pack_array(prev_tx_id, transaction_id)
+}
+
+
+// ── 4. AGENT: CIRCULAR FLOW TRACKER ──────────────────────────────────────────
+// Uncovers circular money laundering loops (A ➔ B ➔ C ➔ A) by wrapping L4 Graph.
+.create-or-alter function with (folder = "SentinelMesh/L5") agent_circularflow_detect() {
+    detect_circular_flows()
+    | mv-expand customer_id = cycle_customers to typeof(string)
+    | join kind=inner (dim_customer | project customer_id, name) on customer_id
+    | extend confidence = round(toreal(amount_consistency_pct) / 100.0, 2)
+    | project 
+        customer_id, 
+        customer_name = name, 
+        agent_name = "Circular Flow Tracker", 
+        confidence, 
+        reason = strcat("Involved in circular fund flow loop: ", array_strcat(cycle_accounts, " ➔ "), " (consistent amount: INR ", tostring(total_amount), ")"),
+        related_transactions = cycle_accounts
+}
+
+
+// ── 5. AGENT: SHADOW LINK DISCOVERER ─────────────────────────────────────────
+// Flags hidden relationships established via shared device/IP fingerprints.
+.create-or-alter function with (folder = "SentinelMesh/L5") agent_shadowlink_detect() {
+    let LinkA = detect_shadow_links()
+        | project 
+            customer_id = customer_a_id, 
+            customer_name = customer_a_name, 
+            linked_name = customer_b_name, 
+            link_strength, 
+            shared_count,
+            shared_entities;
+    let LinkB = detect_shadow_links()
+        | project 
+            customer_id = customer_b_id, 
+            customer_name = customer_b_name, 
+            linked_name = customer_a_name, 
+            link_strength, 
+            shared_count,
+            shared_entities;
+    union LinkA, LinkB
+    | extend confidence = link_strength
+    | project 
+        customer_id, 
+        customer_name, 
+        agent_name = "Shadow Link Discoverer", 
+        confidence, 
+        reason = strcat("Strong shadow relationship with '", linked_name, "' (Strength: ", tostring(link_strength), ") sharing ", tostring(shared_count), " infrastructure entities"),
+        related_transactions = shared_entities
+}
+
+
+// ── 6. AGENT: SHELL ENTITY PROFILER ──────────────────────────────────────────
+// Identifies transactions routed to high-risk shell merchants, characterized 
+// by high merchant shell scores and MCC risk classifications.
+.create-or-alter function with (folder = "SentinelMesh/L5") agent_shell_detect() {
+    fact_transactions
+    | join kind=inner (dim_merchant | where shell_score >= 0.70) on merchant_id
+    | summarize 
+        TotalAmount = sum(amount),
+        TxCount = count(),
+        MaxShellScore = max(shell_score),
+        TxList = make_list(transaction_id)
+        by customer_id, customer_name, merchant_name, mcc_code
+    | extend confidence = round(MaxShellScore, 2)
+    | project 
+        customer_id, 
+        customer_name, 
+        agent_name = "Shell Entity Profiler", 
+        confidence, 
+        reason = strcat("Customer routed ", tostring(TxCount), " payments (totaling INR ", tostring(TotalAmount), ") to suspected shell merchant '", merchant_name, "' (MCC: ", mcc_code, ", Shell Score: ", tostring(MaxShellScore), ")"),
+        related_transactions = TxList
+}

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SENTINEL MESH — 9-Layer Architecture Overview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  /* Fixed size canvas ensures pixel-perfect alignment & easy screenshot capture for PPT */
+  .canvas {
+    width: 1200px;
+    height: 450px;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Node/Box Styling ── */
+  .node {
+    position: absolute;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 14px;
+    z-index: 3;
+    transition: all 0.2s ease;
+  }
+  .node:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  }
+
+  .node .layer-tag {
+    font-size: 7.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #90a4ae;
+    margin-bottom: 2px;
+  }
+
+  .node .title {
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .node .desc {
+    font-size: 9.5px;
+    font-weight: 400;
+    color: #546e7a;
+    margin-top: 3px;
+    line-height: 1.3;
+  }
+
+  /* Curated Premium Color Themes */
+  .theme-l1 {
+    border: 2px solid #00897b;
+    background: #e0f2f1;
+  }
+  .theme-l1 .title { color: #004d40; }
+
+  .theme-l2 {
+    border: 2px solid #7e57c2;
+    background: #f3e5f5;
+  }
+  .theme-l2 .title { color: #4527a0; }
+
+  .theme-l3 {
+    border: 2.5px solid #1e88e5;
+    background: #e3f2fd;
+    box-shadow: 0 4px 10px rgba(30,136,229,0.1);
+  }
+  .theme-l3 .title { color: #0d47a1; }
+
+  .theme-l4 {
+    border: 2px solid #ab47bc;
+    background: #f3e5f5;
+  }
+  .theme-l4 .title { color: #4a148c; }
+
+  .theme-l5 {
+    border: 2px solid #5e35b1;
+    background: #ede7f6;
+  }
+  .theme-l5 .title { color: #311b92; }
+
+  .theme-l6 {
+    border: 2.5px solid #ffb300;
+    background: #fff8e1;
+  }
+  .theme-l6 .title { color: #e65100; }
+
+  .theme-l7 {
+    border: 2px solid #00897b;
+    background: #e0f2f1;
+  }
+  .theme-l7 .title { color: #004d40; }
+
+  .theme-l8 {
+    border: 2px solid #e53935;
+    background: #ffebee;
+  }
+  .theme-l8 .title { color: #b71c1c; }
+
+  .theme-l9 {
+    border: 2.5px solid #43a047;
+    background: #e8f5e9;
+  }
+  .theme-l9 .title { color: #1b5e20; }
+
+  /* ── SVG Arrows Layer (Brought on top with z-index: 5 so arrowheads are visible) ── */
+  .arrows {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  /* ── Edge labels on lines ── */
+  .edge-label {
+    position: absolute;
+    font-size: 8px;
+    font-weight: 600;
+    background: #ffffff;
+    color: #546e7a;
+    padding: 2px 5px;
+    border-radius: 3px;
+    border: 1px solid #cfd8dc;
+    z-index: 6;
+    transform: translate(-50%, -50%);
+  }
+</style>
+</head>
+<body>
+
+<div class="canvas">
+
+  <!-- ══════════ SVG CONNECTOR ARROWS ══════════ -->
+  <svg class="arrows">
+    <defs>
+      <!-- Normal Arrowhead -->
+      <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <polygon points="0,0 6,3 0,6" fill="#78909c"/>
+      </marker>
+      <!-- Feedback Arrowhead (Green) -->
+      <marker id="arrow-green" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <polygon points="0,0 6,3 0,6" fill="#43a047"/>
+      </marker>
+      <!-- Context/Grounding Arrowhead (Blue) -->
+      <marker id="arrow-blue" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <polygon points="0,0 6,3 0,6" fill="#1e88e5"/>
+      </marker>
+    </defs>
+
+    <!-- ── Normal Pipeline Flows ── -->
+    <!-- L1 → L2 (Ends exactly at L2 left edge: x=210) -->
+    <path d="M 190,215 L 210,215" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    
+    <!-- L2 → L3 (Ends exactly at L3 left edge: x=390) -->
+    <path d="M 370,215 L 390,215" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    
+    <!-- L3 → L4 (S-curve up, ends at L4 left edge: x=570, y=110) -->
+    <path d="M 550,215 C 560,215 560,110 570,110" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    
+    <!-- L3 → L5 (Straight across, ends at L5 left edge: x=570) -->
+    <path d="M 550,215 L 570,215" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    
+    <!-- L4 → L6 (S-curve down, ends at L6 left edge: x=750, y=215) -->
+    <path d="M 730,110 C 740,110 740,215 750,215" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    
+    <!-- L5 → L6 (Straight across, ends at L6 left edge: x=750) -->
+    <path d="M 730,215 L 750,215" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    
+    <!-- L6 → L7 (Straight across, ends at L7 left edge: x=930) -->
+    <path d="M 910,215 L 930,215" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    
+    <!-- L6 → L8 (Symmetric downward sweep starting from bottom of L6 to bypass L7 completely) -->
+    <path d="M 830,260 C 830,290 890,335 930,335" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+    
+    <!-- L7 → L8 (Straight down, ends at L8 top edge: y=290) -->
+    <path d="M 1010,260 L 1010,290" stroke="#78909c" stroke-width="1.5" fill="none" marker-end="url(#arrow)" />
+    
+    <!-- L8 → L9 (C-shape loop going out to the right, then turning left to enter L9 right edge: x=1170) -->
+    <path d="M 1090,335 Q 1190,335 1190,222 L 1190,110 L 1170,110" stroke="#78909c" stroke-width="1.8" fill="none" marker-end="url(#arrow)" />
+
+
+    <!-- ── L3 Dashed Blue Context & Grounding Paths ── -->
+    <!-- L3 → L5 (Semantic Context - Underhanging U-curve, ends at L5 bottom edge: y=260) -->
+    <path d="M 470,260 L 470,285 Q 470,295 485,295 L 635,295 Q 650,295 650,285 L 650,260" stroke="#1e88e5" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrow-blue)" />
+    
+    <!-- L3 → L7 (Ontology Grounding - Overhead loop, ends at L7 top edge: y=170) -->
+    <path d="M 470,170 L 470,145 Q 470,135 485,135 L 995,135 Q 1010,135 1010,145 L 1010,170" stroke="#1e88e5" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrow-blue)" />
+
+
+    <!-- ── L9 Dashed Green Feedback Loops ── -->
+    <!-- L9 → L3 (Ontology Updated - Large overhead loop, ends at L3 top edge: y=170) -->
+    <path d="M 1090,65 L 1090,25 Q 1090,15 1075,15 L 485,15 Q 470,15 470,25 L 470,170" stroke="#43a047" stroke-width="2.2" fill="none" stroke-dasharray="6,4" marker-end="url(#arrow-green)" />
+    
+    <!-- L9 → L6 (Threshold Recalibration - Smooth curve entering L6 top edge: y=170) -->
+    <path d="M 1010,110 C 910,110 830,110 830,170" stroke="#43a047" stroke-width="2.2" fill="none" stroke-dasharray="6,4" marker-end="url(#arrow-green)" />
+
+  </svg>
+
+
+  <!-- ══════════ EDGE PATH LABELS ══════════ -->
+  <div class="edge-label" style="top: 295px; left: 560px; color: #1e88e5;">Semantic Context</div>
+  <div class="edge-label" style="top: 135px; left: 740px; color: #1e88e5;">Ontology Grounding</div>
+  <div class="edge-label" style="top: 15px; left: 740px; color: #43a047;">Feedback — Ontology Updated</div>
+  <div class="edge-label" style="top: 102px; left: 915px; color: #43a047;">Recalibrate</div>
+
+
+  <!-- ══════════ 9 NODES LAYOUT ══════════ -->
+  
+  <!-- L1 -->
+  <div class="node theme-l1" style="top: 170px; left: 30px; width: 160px; height: 90px;">
+    <div class="layer-tag">Layer 1</div>
+    <div class="title">Data Ingestion Fabric</div>
+    <div class="desc">Eventstreams, Real-Time Hub, and Batch Pipelines.</div>
+  </div>
+
+  <!-- L2 -->
+  <div class="node theme-l2" style="top: 170px; left: 210px; width: 160px; height: 90px;">
+    <div class="layer-tag">Layer 2</div>
+    <div class="title">Semantic Lakehouse</div>
+    <div class="desc">Eventhouse (Hot DB), Lakehouse (Warm), OneLake (Cold).</div>
+  </div>
+
+  <!-- L3 -->
+  <div class="node theme-l3" style="top: 170px; left: 390px; width: 160px; height: 90px;">
+    <div class="layer-tag">Layer 3 — The Brain</div>
+    <div class="title">IQ Ontology Core</div>
+    <div class="desc">Unified entity schemas & 6D Behavioral DNA.</div>
+  </div>
+
+  <!-- L4 -->
+  <div class="node theme-l4" style="top: 65px; left: 570px; width: 160px; height: 90px;">
+    <div class="layer-tag">Layer 4</div>
+    <div class="title">Temporal Graph</div>
+    <div class="desc">Fabric Graph & GQL queries for circular flow detection.</div>
+  </div>
+
+  <!-- L5 -->
+  <div class="node theme-l5" style="top: 170px; left: 570px; width: 160px; height: 90px;">
+    <div class="layer-tag">Layer 5</div>
+    <div class="title">Cognitive Swarm</div>
+    <div class="desc">6 specialized Agents and Orchestrator.</div>
+  </div>
+
+  <!-- L6 -->
+  <div class="node theme-l6" style="top: 170px; left: 750px; width: 160px; height: 90px;">
+    <div class="layer-tag">Layer 6</div>
+    <div class="title">Adaptive Risk Scoring</div>
+    <div class="desc">5-Factor Ensemble score (0-100) & dynamic tiers.</div>
+  </div>
+
+  <!-- L7 -->
+  <div class="node theme-l7" style="top: 170px; left: 930px; width: 160px; height: 90px;">
+    <div class="layer-tag">Layer 7</div>
+    <div class="title">AML Copilot</div>
+    <div class="desc">NL search, chat investigation & auto-generated SARs.</div>
+  </div>
+
+  <!-- L8 -->
+  <div class="node theme-l8" style="top: 290px; left: 930px; width: 160px; height: 90px;">
+    <div class="layer-tag">Layer 8</div>
+    <div class="title">Action Gateway</div>
+    <div class="desc">Fabric Activator triggers, freezes, and alerts.</div>
+  </div>
+
+  <!-- L9 -->
+  <div class="node theme-l9" style="top: 65px; left: 1010px; width: 160px; height: 90px;">
+    <div class="layer-tag">Layer 9</div>
+    <div class="title">Feedback Loop</div>
+    <div class="desc">Analyst loop autotunes weights & updates ontology.</div>
+  </div>
+
+</div>
+
+</body>
+</html>

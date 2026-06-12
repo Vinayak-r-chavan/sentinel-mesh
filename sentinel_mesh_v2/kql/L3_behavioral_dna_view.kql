@@ -1,0 +1,167 @@
+// ============================================================================
+// L3: IQ ONTOLOGY CORE (BEHAVIORAL DNA ENGINE) — NATIVE KQL IMPLEMENTATION
+// SENTINEL MESH V2 — Real-Time, Zero-Compute, Fully Automated
+// ============================================================================
+//
+// Run these commands in your Fabric Eventhouse KQL query editor.
+// This sets up:
+//   1. Seeding additional DNA configuration keys to dim_adaptive_config
+//   2. A Materialized View to pre-aggregate daily behavioral statistics
+//   3. A KQL Function to calculate the rolling DNA and Drift Score on the fly
+//
+// ============================================================================
+
+// ── 1. SEED ADDITIONAL DNA PARAMETERS INTO CONFIG TABLE ──────────────────────
+// Run this ingestion step to add the DNA engine parameters to your configuration.
+.set-or-append dim_adaptive_config <|
+    union
+    (print config_key="dna.current_window_days", config_value=1.0, description="Rolling days for current DNA profile calculation", last_updated=now(), updated_by="system_init"),
+    (print config_key="dna.baseline_window_days", config_value=30.0, description="Rolling days for baseline DNA profile calculation", last_updated=now(), updated_by="system_init"),
+    (print config_key="dna.amount_normalization_factor", config_value=10000.0, description="Normalization scale for amount profiling variance", last_updated=now(), updated_by="system_init"),
+    (print config_key="dna.round_number_divisor", config_value=100.0, description="Divisor for checking round number transactions", last_updated=now(), updated_by="system_init"),
+    (print config_key="dna.default_recurrence_ratio", config_value=0.50, description="Fallback value for counterparty recurrence", last_updated=now(), updated_by="system_init"),
+    (print config_key="dna.default_dormancy_burst", config_value=1.0, description="Fallback value for dormancy burst", last_updated=now(), updated_by="system_init")
+
+// ── 2. CREATE MATERIALIZED VIEW FOR DAILY STATS ──────────────────────────────
+// This automatically groups transactions by customer and day as they arrive.
+// It runs incrementally on ingestion, saving massive compute costs.
+// NOTE: Due to KQL platform constraints, materialized view definitions must 
+// use static bin sizes and cannot use dynamic variables, joins, or functions like 
+// stdev/countif/coalesce inside summarize. Standard deviation is calculated algebraically.
+.drop materialized-view mv_daily_dna_stats ifexists
+
+.create materialized-view mv_daily_dna_stats on table fact_transactions
+{
+    fact_transactions
+    | extend 
+        is_digital = iif(channel in ("UPI", "Mobile"), 1, 0),
+        is_round = iif(amount % 100 == 0, 1, 0),
+        is_swift = iif(channel == "SWIFT", 1, 0),
+        amount_sq = pow(amount, 2.0)
+    | summarize 
+        velocity = count(),
+        sum_amount = sum(amount),
+        sum_sq_amount = sum(amount_sq),
+        geographic_spread = dcount(geo_location),
+        counterparty_diversity = dcount(counterparty_account),
+        digital_count = sum(is_digital),
+        round_number_count = sum(is_round),
+        device_count = dcount(device_id),
+        cross_border_count = sum(is_swift),
+        last_computed = max(timestamp)
+        by customer_id, bin(timestamp, 1d)
+}
+
+// ── 3. CREATE FUNCTION TO COMPUTE DNA & DRIFT ON THE FLY ─────────────────────
+// This function joins the current DNA window with the historical baseline
+// and calculates the Euclidean Drift Score dynamically based on dim_adaptive_config.
+.create-or-alter function with (folder = "SentinelMesh/L3") get_behavioral_dna() {
+    let current_window = 1d * toreal(toscalar(dim_adaptive_config | where config_key == "dna.current_window_days" | project config_value));
+    let baseline_window = 1d * toreal(toscalar(dim_adaptive_config | where config_key == "dna.baseline_window_days" | project config_value));
+    let amt_norm_factor = toreal(toscalar(dim_adaptive_config | where config_key == "dna.amount_normalization_factor" | project config_value));
+    let round_number_div = toreal(toscalar(dim_adaptive_config | where config_key == "dna.round_number_divisor" | project config_value));
+    let default_recurrence = toreal(toscalar(dim_adaptive_config | where config_key == "dna.default_recurrence_ratio" | project config_value));
+    let default_dormancy_burst = toreal(toscalar(dim_adaptive_config | where config_key == "dna.default_dormancy_burst" | project config_value));
+    let Recurrence_1D = 
+        fact_transactions
+        | where timestamp >= now() - current_window
+        | summarize count() by customer_id, counterparty_account
+        | summarize max_recurrence_count = todouble(max(count_)) by customer_id;
+    let Gaps_1D = 
+        fact_transactions
+        | where timestamp >= now() - current_window
+        | order by customer_id asc, timestamp asc
+        | serialize
+        | extend next_time = next(timestamp)
+        | extend next_customer = next(customer_id)
+        | extend gap = datetime_diff('minute', next_time, timestamp)
+        | where next_customer == customer_id
+        | summarize max_gap = todouble(max(gap)), avg_gap = coalesce(avg(gap), 1.0) by customer_id
+        | project customer_id, dormancy_burst_1d = iif(avg_gap > 0, max_gap / avg_gap, 1.0);
+    let DNA_1D = 
+        fact_transactions
+        | where timestamp >= now() - current_window
+        | summarize 
+            velocity_1d = todouble(count()),
+            amount_profile_1d = coalesce(avg(amount), 0.0),
+            temporal_pattern_1d = coalesce(stdev(todouble(datetime_part("hour", timestamp))), 0.0),
+            counterparty_diversity_1d = todouble(dcount(counterparty_account)),
+            channel_mix_1d = coalesce(todouble(countif(channel in ("UPI", "Mobile"))) / todouble(count()), 0.0),
+            geographic_spread_1d = todouble(dcount(geo_location)),
+            amount_entropy_1d = coalesce(stdev(amount) / avg(amount), 0.0),
+            round_number_ratio_1d = coalesce(todouble(countif(amount % round_number_div == 0)) / todouble(count()), 0.0),
+            cross_border_ratio_1d = coalesce(todouble(countif(channel == "SWIFT")) / todouble(count()), 0.0),
+            device_switching_1d = coalesce(todouble(dcount(device_id)) / todouble(count()), 0.0)
+            by customer_id
+        | join kind=leftouter Recurrence_1D on customer_id
+        | join kind=leftouter Gaps_1D on customer_id
+        | project 
+            customer_id,
+            velocity_1d,
+            amount_profile_1d,
+            temporal_pattern_1d,
+            counterparty_diversity_1d,
+            channel_mix_1d,
+            geographic_spread_1d,
+            amount_entropy_1d,
+            round_number_ratio_1d,
+            counterparty_recurrence_1d = coalesce(max_recurrence_count / velocity_1d, default_recurrence),
+            dormancy_burst_1d = coalesce(dormancy_burst_1d, default_dormancy_burst),
+            cross_border_ratio_1d,
+            device_switching_1d;
+    let DNA_30D = 
+        mv_daily_dna_stats
+        | where timestamp >= now() - baseline_window
+        | summarize 
+            sum_amount_30d = sum(sum_amount),
+            sum_sq_amount_30d = sum(sum_sq_amount),
+            velocity_sum_30d = sum(velocity),
+            counterparty_diversity_30d = avg(counterparty_diversity), 
+            digital_count_30d = sum(digital_count),
+            geographic_spread_30d = avg(geographic_spread),
+            round_number_count_30d = sum(round_number_count),
+            device_count_30d = sum(device_count),
+            cross_border_count_30d = sum(cross_border_count)
+            by customer_id
+        | project 
+            customer_id,
+            velocity_30d = velocity_sum_30d / 30.0,
+            amount_profile_30d = sum_amount_30d / velocity_sum_30d,
+            amount_entropy_30d = iif(sum_amount_30d > 0, sqrt(max_of(0.0, sum_sq_amount_30d / velocity_sum_30d - pow(sum_amount_30d / velocity_sum_30d, 2.0))) / (sum_amount_30d / velocity_sum_30d), 0.0),
+            counterparty_diversity_30d,
+            channel_mix_30d = iif(velocity_sum_30d > 0, todouble(digital_count_30d) / velocity_sum_30d, 0.0),
+            geographic_spread_30d,
+            round_number_ratio_30d = iif(velocity_sum_30d > 0, todouble(round_number_count_30d) / velocity_sum_30d, 0.0),
+            device_switching_30d = iif(velocity_sum_30d > 0, todouble(device_count_30d) / velocity_sum_30d, 0.0),
+            cross_border_ratio_30d = iif(velocity_sum_30d > 0, todouble(cross_border_count_30d) / velocity_sum_30d, 0.0);
+    DNA_1D
+    | join kind=inner DNA_30D on customer_id
+    | extend drift_score = sqrt(
+        pow(velocity_1d - velocity_30d, 2) +
+        pow(amount_profile_1d - amount_profile_30d, 2) / amt_norm_factor +
+        pow(channel_mix_1d - channel_mix_30d, 2) +
+        pow(geographic_spread_1d - geographic_spread_30d, 2) +
+        pow(round_number_ratio_1d - round_number_ratio_30d, 2)
+      )
+    | project 
+        customer_id,
+        time_window = "dynamic",
+        velocity = velocity_1d,
+        amount_profile = round(amount_profile_1d, 4),
+        temporal_pattern = round(temporal_pattern_1d, 4),
+        counterparty_diversity = round(counterparty_diversity_1d, 4),
+        channel_mix = round(channel_mix_1d, 4),
+        geographic_spread = round(geographic_spread_1d, 4),
+        amount_entropy = round(amount_entropy_1d, 4),
+        round_number_ratio = round(round_number_ratio_1d, 4),
+        counterparty_recurrence = round(counterparty_recurrence_1d, 4),
+        dormancy_burst = round(dormancy_burst_1d, 4),
+        cross_border_ratio = round(cross_border_ratio_1d, 4),
+        device_switching = round(device_switching_1d, 4),
+        drift_score = round(drift_score, 4),
+        computed_at = now()
+}
+
+// ── 4. VERIFICATION QUERY ────────────────────────────────────────────────────
+// Run this function query to inspect computed Behavioral DNA and Drift Scores!
+// get_behavioral_dna()

@@ -1,0 +1,97 @@
+// ============================================================================
+// L4: TEMPORAL KNOWLEDGE GRAPH — NATIVE KQL IMPLEMENTATION
+// SENTINEL MESH V2 — Real-Time, Sub-Second, Graph Match Engine
+// ============================================================================
+//
+// Run these commands in your Fabric Eventhouse KQL query editor.
+// This sets up:
+//   1. Seeding additional graph config parameters to dim_adaptive_config
+//   2. A KQL Function to detect circular transaction flows of 3-10 hops
+//   3. A KQL Function to detect shadow links (shared devices / IP addresses)
+//
+// ============================================================================
+
+// ── 1. SEED ADDITIONAL GRAPH CONFIG PARAMETERS ──────────────────────────────
+.set-or-append dim_adaptive_config <|
+    union
+    (print config_key="agent.circular_flow.window_hours", config_value=2.0, description="Maximum hours for transaction loop completion", last_updated=now(), updated_by="system_init"),
+    (print config_key="agent.circular_flow.amount_consistency_threshold", config_value=0.80, description="Minimum ratio of min_amount to max_amount in loops", last_updated=now(), updated_by="system_init"),
+    (print config_key="agent.shadow_link.min_shared_entities", config_value=1.0, description="Minimum shared devices or IPs to link customers", last_updated=now(), updated_by="system_init")
+
+// ── 2. CREATE FUNCTION: detect_circular_flows() ─────────────────────────────
+// Scans transaction paths for money laundering loops (A ➔ B ➔ C ➔ A)
+// Note: Function body contains no blank lines to avoid KQL parser issues.
+.create-or-alter function with (folder = "SentinelMesh/L4") detect_circular_flows() {
+    let min_hops = toint(toscalar(dim_adaptive_config | where config_key == "agent.circular_flow.min_hops" | project config_value));
+    let max_hops = toint(toscalar(dim_adaptive_config | where config_key == "agent.circular_flow.max_hops" | project config_value));
+    let window_hours = toscalar(dim_adaptive_config | where config_key == "agent.circular_flow.window_hours" | project config_value);
+    let allowed_window = iif(isnull(window_hours), 2.0, window_hours) * 1h;
+    let amt_threshold = toscalar(dim_adaptive_config | where config_key == "agent.circular_flow.amount_consistency_threshold" | project config_value);
+    let consistency_threshold = iif(isnull(amt_threshold), 0.8, amt_threshold);
+    let Nodes = fact_transactions | summarize customer_id = take_any(customer_id) by account_id;
+    let Edges = fact_transactions | where counterparty_account != "ACC-SELF" and counterparty_account != "ACC-MERC-NONE" | project source = account_id, destination = counterparty_account, amount, timestamp, transaction_id, customer_id;
+    Edges
+    | make-graph source --> destination with Nodes on account_id
+    | graph-match (Start)-[transfers*3..10]->(Start)
+      project 
+        Account_Start = Start.account_id,
+        Flow_Path = strcat(Start.account_id, " ➔ ", array_strcat(map(transfers, destination), " ➔ ")),
+        Hop_Count = array_length(map(transfers, destination)),
+        Min_Amount = array_sort_asc(map(transfers, amount))[0],
+        Max_Amount = array_sort_desc(map(transfers, amount))[0],
+        End_Time = array_sort_desc(map(transfers, timestamp))[0],
+        Start_Time = array_sort_asc(map(transfers, timestamp))[0],
+        All_Accounts = array_concat(pack_array(Start.account_id), map(transfers, destination)),
+        All_Customers = array_concat(pack_array(Start.customer_id), map(transfers, customer_id))
+    | where Hop_Count >= min_hops and Hop_Count <= max_hops
+    | extend duration_seconds = datetime_diff('second', todatetime(End_Time), todatetime(Start_Time))
+    | where duration_seconds <= toreal(allowed_window / 1s)
+    | extend amount_consistency = toreal(Min_Amount) / toreal(Max_Amount)
+    | where amount_consistency >= consistency_threshold
+    | extend SortedAccounts = array_sort_asc(All_Accounts)
+    | extend CycleSignature = array_strcat(SortedAccounts, "-")
+    | summarize 
+        cycle_accounts = take_any(All_Accounts),
+        cycle_customers = take_any(All_Customers),
+        hop_count = take_any(Hop_Count),
+        total_amount = toreal(take_any(Min_Amount)),
+        avg_amount_per_hop = toreal(take_any(Min_Amount)),
+        amount_consistency_pct = round(take_any(amount_consistency) * 100.0, 2),
+        time_window_minutes = round(toreal(take_any(duration_seconds)) / 60.0, 2),
+        detected_at = now(),
+        status = "ACTIVE"
+        by CycleSignature
+    | project-away CycleSignature
+    | extend flow_id = tostring(new_guid())
+}
+
+// ── 3. CREATE FUNCTION: detect_shadow_links() ───────────────────────────────
+// Traverses bipartite customer-to-attribute links (CustA ➔ Shared_Infra ➔ CustB)
+// Note: Function body contains no blank lines to avoid KQL parser issues.
+.create-or-alter function with (folder = "SentinelMesh/L4") detect_shadow_links() {
+    let min_shared = toscalar(dim_adaptive_config | where config_key == "agent.shadow_link.min_shared_entities" | project config_value);
+    let threshold = iif(isnull(min_shared), 1.0, min_shared);
+    let max_depth = toscalar(dim_adaptive_config | where config_key == "agent.shadow_link.max_hop_depth" | project config_value);
+    let max_link_norm = iif(isnull(max_depth), 3.0, max_depth);
+    let Nodes = union (dim_customer | project node_id = customer_id, node_type = "customer", label = name), (dim_device | project node_id = device_id, node_type = "device", label = device_type), (dim_ip_address | project node_id = ip_address, node_type = "ip", label = geo_location);
+    let Edges = union (dim_device | mv-expand customer_id = customer_ids to typeof(string) | project source = customer_id, destination = device_id), (dim_ip_address | mv-expand customer_id = customer_ids to typeof(string) | project source = customer_id, destination = ip_address);
+    Edges
+    | make-graph source --> destination with Nodes on node_id
+    | graph-match (Cust1)-[e1]->(Infra)<-[e2]-(Cust2)
+      where tostring(Cust1.node_id) != tostring(Cust2.node_id)
+      project 
+        Cust1_Id = tostring(Cust1.node_id),
+        Cust1_Name = tostring(Cust1.label),
+        Cust2_Id = tostring(Cust2.node_id),
+        Cust2_Name = tostring(Cust2.label),
+        Shared_Entity = tostring(Infra.node_id),
+        Shared_Type = tostring(Infra.node_type)
+    | summarize Shared_Count = count(), Shared_Entities = make_list(pack("id", Shared_Entity, "type", Shared_Type)) by Cust1_Id, Cust1_Name, Cust2_Id, Cust2_Name
+    | where Shared_Count >= threshold and strcmp(Cust1_Id, Cust2_Id) < 0
+    | project customer_a_id = Cust1_Id, customer_a_name = Cust1_Name, customer_b_id = Cust2_Id, customer_b_name = Cust2_Name, shared_count = Shared_Count, shared_entities = Shared_Entities, link_strength = round(min_of(toreal(Shared_Count) / max_link_norm, 1.0), 4), detected_at = now(), status = "ACTIVE"
+}
+
+// ── 4. VERIFICATION QUERIES ──────────────────────────────────────────────────
+// Execute these queries to verify detection output:
+// detect_circular_flows()
+// detect_shadow_links()
