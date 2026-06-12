@@ -66,6 +66,10 @@ def get_kusto_client(cluster_uri: str) -> KustoClient:
 
 
 def main():
+    # Force UTF-8 output to prevent Unicode/CP1252 mapping issues on Windows consoles
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+        
     print("=" * 70)
     print("SENTINEL MESH V2 -- Automated Eventhouse/KQL Deployer")
     print("=" * 70)
