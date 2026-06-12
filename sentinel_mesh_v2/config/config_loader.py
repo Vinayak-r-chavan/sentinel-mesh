@@ -324,7 +324,7 @@ if __name__ == "__main__":
     required_sections = [
         "azure", "fabric", "simulator", "dimensions",
         "scenarios", "scoring", "dna", "agents",
-        "alerting", "sar", "feedback", "monitoring",
+        "sar", "feedback", "monitoring", "schema",
     ]
 
     print("\n-- Section Verification --")
@@ -345,7 +345,7 @@ if __name__ == "__main__":
         ("scoring.weights.f1_agent_consensus", get_param("scoring.weights.f1_agent_consensus")),
         ("dna.dimensions", get_param("dna.dimensions")),
         ("scenarios.structuring.total_threshold", get_param("scenarios.structuring.total_threshold")),
-        ("alerting.critical_score_threshold", get_param("alerting.critical_score_threshold")),
+        ("scoring.tiers.high", get_param("scoring.tiers.high")),
     ]
 
     for key, value in samples:

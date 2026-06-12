@@ -275,7 +275,7 @@ class ScenarioEngine:
         # Base amount with slight variation between hops
         amt_range = cfg.get("amount_range", {"min": 1000000, "max": 5000000})
         base_amount = random.uniform(amt_range["min"], amt_range["max"])
-        variation_pct = cfg.get("amount_variation_pct", 2.0)
+        variation_pct = cfg.get("amount_variation_pct", 0.02)
 
         # Timing
         delay_range = cfg.get("inter_hop_delay_seconds", {"min": 2, "max": 30})
@@ -288,7 +288,7 @@ class ScenarioEngine:
             receiver = participants[(i + 1) % len(participants)]  # Wraps around
 
             # Slight amount variation
-            variation = base_amount * random.uniform(-variation_pct / 100, variation_pct / 100)
+            variation = base_amount * random.uniform(-variation_pct, variation_pct)
             amount = base_amount + variation
 
             delay_secs = random.uniform(delay_range["min"], delay_range["max"])

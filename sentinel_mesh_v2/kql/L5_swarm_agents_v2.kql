@@ -15,8 +15,9 @@
 .create-or-alter function with (folder = "SentinelMesh/L5") agent_structuring_detect() {
     let limit = toreal(toscalar(dim_adaptive_config | where config_key == "agent.structuring.amount_threshold" | project config_value));
     let limit_threshold = iif(isnull(limit), 1000000.0, limit); // Fallback ₹10L
-    let window_hours = toscalar(dim_adaptive_config | where config_key == "dna.current_window_days" | project config_value);
-    let allowed_window = iif(isnull(window_hours), 1.0, window_hours) * 1d; // Fallback 1 day
+    let min_count = coalesce(toint(toscalar(dim_adaptive_config | where config_key == "agent.structuring.min_txn_count" | project config_value)), 3);
+    let window_hours = coalesce(toscalar(dim_adaptive_config | where config_key == "agent.structuring.time_window_hours" | project config_value), 24.0);
+    let allowed_window = window_hours * 1h;
     fact_transactions
     | where tolower(transaction_type) in ("deposit", "transfer", "payment")
     | summarize 
@@ -26,7 +27,7 @@
         TxList = make_list(transaction_id)
         by customer_id, customer_name, bin(timestamp, allowed_window)
     | where TotalAmount >= limit_threshold 
-      and TxCount > 1 
+      and TxCount >= min_count 
       and MaxSingleAmount < limit_threshold
     | extend confidence = round(min_of(toreal(TotalAmount) / (limit_threshold * 1.5), 0.99), 2)
     | project 
@@ -43,7 +44,7 @@
 // Detects statistical outliers in a customer's rolling transaction velocity 
 // by comparing daily activity against their multi-resolution baseline DNA.
 .create-or-alter function with (folder = "SentinelMesh/L5") agent_velocity_detect() {
-    let sigma_threshold = toreal(toscalar(dim_adaptive_config | where config_key == "agent.velocity.sigma" | project config_value));
+    let sigma_threshold = toreal(toscalar(dim_adaptive_config | where config_key == "agent.velocity.sigma_threshold" | project config_value));
     let drift_limit = iif(isnull(sigma_threshold), 3.0, sigma_threshold); // Fallback 3.0
     dim_behavioral_dna
     | summarize arg_max(computed_at, *) by customer_id
@@ -64,7 +65,7 @@
 // Detects "impossible travel" patterns, where a customer accesses their account 
 // from distinct geographic locations in a physically impossible timeframe.
 .create-or-alter function with (folder = "SentinelMesh/L5") agent_geotemporal_detect() {
-    let travel_limit = toscalar(dim_adaptive_config | where config_key == "agent.geo.travel_minutes" | project config_value);
+    let travel_limit = toscalar(dim_adaptive_config | where config_key == "agent.geo_temporal.max_travel_minutes" | project config_value);
     let allowed_minutes = iif(isnull(travel_limit), 120.0, travel_limit); // Fallback 2 hours
     fact_transactions
     | order by customer_id asc, timestamp asc
@@ -139,8 +140,9 @@
 // Identifies transactions routed to high-risk shell merchants, characterized 
 // by high merchant shell scores and MCC risk classifications.
 .create-or-alter function with (folder = "SentinelMesh/L5") agent_shell_detect() {
+    let shell_threshold = coalesce(toreal(toscalar(dim_adaptive_config | where config_key == "agent.shell_entity.shell_score_threshold" | project config_value)), 0.70);
     fact_transactions
-    | join kind=inner (dim_merchant | where shell_score >= 0.70) on merchant_id
+    | join kind=inner (dim_merchant | where shell_score >= shell_threshold) on merchant_id
     | summarize 
         TotalAmount = sum(amount),
         TxCount = count(),

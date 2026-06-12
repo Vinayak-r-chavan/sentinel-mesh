@@ -1,49 +1,49 @@
 // Auto-generated KQL ingestion for dim_ip_address
-// Generated at: 2026-06-06T08:35:38.456599+00:00
+// Generated at: 2026-06-12T10:30:11.180380+00:00
 // Rows: 40
 
 .clear table dim_ip_address data
 
 .ingest inline into table dim_ip_address <|
-10.133.189.255,Coimbatore, India,False,False,["CUST-0015"]
-10.135.235.53,Bangalore, India,False,False,["CUST-0026"]
-10.222.127.36,Lucknow, India,False,False,["CUST-0005"]
-172.26.9.165,Mumbai, India,False,False,["CUST-0041"]
-172.19.179.94,Lucknow, India,False,False,["CUST-0011"]
-172.22.21.32,Kolkata, India,False,False,["CUST-0024", "CUST-0016"]
-172.29.244.46,Chandigarh, India,False,False,["CUST-0026"]
-10.100.225.201,Jaipur, India,False,False,["CUST-0011", "CUST-0034"]
-172.26.144.255,Coimbatore, India,False,False,["CUST-0023"]
-192.168.63.206,Chennai, India,False,False,["CUST-0007"]
-192.168.158.90,Delhi, India,False,False,["CUST-0049"]
-192.168.206.7,Indore, India,False,False,["CUST-0030"]
-192.168.65.43,Lucknow, India,False,False,["CUST-0037"]
-10.194.31.84,Mumbai, India,False,False,["CUST-0021"]
-192.168.89.26,Pune, India,False,False,["CUST-0018"]
-192.168.207.233,Kochi, India,False,False,["CUST-0019", "CUST-0005", "CUST-0029"]
-192.168.155.149,Kolkata, India,False,False,["CUST-0040"]
-172.26.79.221,Ahmedabad, India,False,False,["CUST-0048"]
-172.22.214.164,Ahmedabad, India,False,False,["CUST-0013"]
-192.168.86.225,Nagpur, India,False,False,["CUST-0029"]
-192.168.171.157,Delhi, India,True,False,["CUST-0006"]
-10.120.64.178,Lucknow, India,False,False,["CUST-0029"]
-192.168.101.244,Indore, India,False,False,["CUST-0019"]
-10.125.92.0,Mumbai, India,False,False,["CUST-0041"]
-172.18.84.155,Chandigarh, India,False,False,["CUST-0025"]
-172.22.56.208,Pune, India,False,False,["CUST-0039"]
-192.168.253.31,Kochi, India,False,False,["CUST-0023"]
-172.16.45.108,Mumbai, India,False,False,["CUST-0039"]
-10.112.11.242,Kochi, India,False,False,["CUST-0022"]
-10.237.217.123,Mumbai, India,False,False,["CUST-0044"]
-10.62.34.182,Pune, India,False,False,["CUST-0024", "CUST-0014", "CUST-0012"]
-172.30.222.91,Delhi, India,True,False,["CUST-0015"]
-192.168.162.116,Jaipur, India,False,False,["CUST-0007"]
-172.29.167.220,Nagpur, India,False,False,["CUST-0003"]
-192.168.81.125,Delhi, India,False,False,["CUST-0025"]
-192.168.230.111,Bangalore, India,False,False,["CUST-0011"]
-172.24.223.188,Lucknow, India,False,False,["CUST-0016"]
-192.168.122.126,Chennai, India,False,False,["CUST-0029"]
-172.25.36.175,Chennai, India,False,False,["CUST-0031"]
-10.163.176.248,Hyderabad, India,False,False,["CUST-0029"]
+172.31.209.32,"Kochi, India",False,False,"[""CUST-0023""]"
+192.168.58.117,"Nagpur, India",False,False,"[""CUST-0011""]"
+10.82.177.13,"Delhi, India",False,False,"[""CUST-0049""]"
+10.229.238.150,"Coimbatore, India",False,False,"[""CUST-0029""]"
+10.251.47.61,"Mumbai, India",False,False,"[""CUST-0044""]"
+10.146.40.179,"Bangalore, India",False,False,"[""CUST-0024""]"
+172.19.44.161,"Kochi, India",False,False,"[""CUST-0019""]"
+172.30.177.0,"Chennai, India",False,False,"[""CUST-0038"", ""CUST-0009"", ""CUST-0020""]"
+10.214.13.66,"Kochi, India",True,False,"[""CUST-0009""]"
+172.30.223.11,"Bangalore, India",False,False,"[""CUST-0045""]"
+10.40.24.175,"Lucknow, India",False,False,"[""CUST-0038""]"
+10.201.83.11,"Chennai, India",False,False,"[""CUST-0015""]"
+172.23.241.105,"Pune, India",False,False,"[""CUST-0036""]"
+192.168.167.0,"Jaipur, India",False,False,"[""CUST-0007""]"
+172.16.76.68,"Kolkata, India",False,False,"[""CUST-0044""]"
+10.47.134.196,"Kochi, India",False,False,"[""CUST-0022""]"
+192.168.200.103,"Hyderabad, India",False,False,"[""CUST-0040""]"
+172.22.79.55,"Lucknow, India",False,False,"[""CUST-0031"", ""CUST-0028""]"
+192.168.15.119,"Hyderabad, India",True,False,"[""CUST-0049""]"
+10.175.9.73,"Nagpur, India",False,False,"[""CUST-0017""]"
+172.25.121.21,"Kochi, India",True,False,"[""CUST-0041""]"
+192.168.253.118,"Pune, India",False,False,"[""CUST-0044""]"
+172.22.118.13,"Coimbatore, India",False,False,"[""CUST-0004""]"
+10.99.54.49,"Nagpur, India",False,False,"[""CUST-0046""]"
+10.181.190.167,"Ahmedabad, India",False,False,"[""CUST-0036""]"
+192.168.215.118,"Kochi, India",False,False,"[""CUST-0007"", ""CUST-0025"", ""CUST-0009""]"
+192.168.111.26,"Kolkata, India",False,False,"[""CUST-0020""]"
+192.168.54.0,"Indore, India",False,False,"[""CUST-0040""]"
+192.168.172.255,"Ahmedabad, India",False,True,"[""CUST-0007"", ""CUST-0013""]"
+192.168.85.171,"Bangalore, India",False,False,"[""CUST-0043""]"
+172.28.113.80,"Chennai, India",False,False,"[""CUST-0037""]"
+10.69.244.231,"Chandigarh, India",False,False,"[""CUST-0024""]"
+10.210.155.133,"Bangalore, India",False,False,"[""CUST-0013""]"
+192.168.242.70,"Mumbai, India",False,False,"[""CUST-0003""]"
+10.20.213.145,"Mumbai, India",False,False,"[""CUST-0023""]"
+10.190.137.35,"Delhi, India",False,False,"[""CUST-0031""]"
+10.166.76.57,"Chennai, India",False,False,"[""CUST-0036""]"
+172.26.92.43,"Kochi, India",False,False,"[""CUST-0025""]"
+192.168.44.92,"Bangalore, India",False,False,"[""CUST-0007""]"
+192.168.155.84,"Mumbai, India",False,False,"[""CUST-0025""]"
 
 // Verify: dim_ip_address | count

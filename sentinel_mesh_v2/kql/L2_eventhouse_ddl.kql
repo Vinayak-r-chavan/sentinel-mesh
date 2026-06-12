@@ -312,7 +312,10 @@
     (print config_key="agent.shadow_link.max_hop_depth", config_value=3.0, description="Maximum transitive closure depth", last_updated=now(), updated_by="system_init"),
     (print config_key="agent.shell_entity.shell_score_threshold", config_value=0.70, description="Shell score threshold for flagging", last_updated=now(), updated_by="system_init"),
     (print config_key="agent.shell_entity.min_concentration_ratio", config_value=0.80, description="Minimum counterparty concentration for shell flag", last_updated=now(), updated_by="system_init"),
-    (print config_key="dna.drift_threshold_sigma", config_value=2.5, description="Sigma threshold for DNA drift detection", last_updated=now(), updated_by="system_init")
+    (print config_key="dna.drift_threshold_sigma", config_value=2.5, description="Sigma threshold for DNA drift detection", last_updated=now(), updated_by="system_init"),
+    (print config_key="agent.structuring.time_window_hours", config_value=24.0, description="Structuring analysis time window in hours", last_updated=now(), updated_by="system_init"),
+    (print config_key="scoring.drift.max_scale", config_value=10.0, description="Max scale normalization divisor for DNA drift score", last_updated=now(), updated_by="system_init"),
+    (print config_key="scoring.history.max_scale", config_value=5.0, description="Max scale normalization divisor for alert history score", last_updated=now(), updated_by="system_init")
 
 
 // ─────────────────────────────────────────────────────────────────────────────

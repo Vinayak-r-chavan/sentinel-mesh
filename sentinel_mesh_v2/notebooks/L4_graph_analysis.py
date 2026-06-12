@@ -80,7 +80,7 @@ print(f"   Hub percentile threshold: {HUB_PERCENTILE}")
 # Load transaction edges (account → counterparty)
 edges_query = """
 fact_transactions 
-| where counterparty_account != "ACC-SELF" and counterparty_account != "ACC-MERC-NONE"
+| where counterparty_account != account_id and counterparty_account !startswith "ACC-MERC"
 | summarize 
     tx_count = count(), 
     total_amount = sum(amount),
@@ -123,15 +123,19 @@ print(f"✅ Loaded {len(account_to_customer)} account→customer mappings")
 
 import networkx as nx
 from networkx.algorithms.community import louvain_communities
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Build directed graph
 G = nx.DiGraph()
 
 for row in edges_list:
+    src = row["source_account"]
+    tgt = row["target_account"]
+    if src == tgt or tgt.startswith("ACC-MERC") or tgt == "ACC-SELF" or tgt == "ACC-MERC-NONE":
+        continue
     G.add_edge(
-        row["source_account"], 
-        row["target_account"], 
+        src, 
+        tgt, 
         weight=float(row["total_amount"]),
         tx_count=int(row["tx_count"])
     )
@@ -195,7 +199,7 @@ print(f"   Identified {hub_count} hub accounts (potential money mules)")
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, BooleanType, TimestampType
 
 # Build result rows
-computed_at = datetime.utcnow()
+computed_at = datetime.now(timezone.utc).replace(tzinfo=None)
 results = []
 
 for account_id in G.nodes():

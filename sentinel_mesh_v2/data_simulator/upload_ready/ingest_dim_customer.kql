@@ -1,59 +1,59 @@
 // Auto-generated KQL ingestion for dim_customer
-// Generated at: 2026-06-06T08:35:38.454589+00:00
+// Generated at: 2026-06-12T10:30:11.178837+00:00
 // Rows: 50
 
 .clear table dim_customer data
 
 .ingest inline into table dim_customer <|
-CUST-0001,Aryan Maharaj,0.0423,Pending,false,IN,Kochi,2024-06-20
-CUST-0002,Liam Chaudry,0.0397,Pending,false,IN,Chandigarh,2026-04-22
-CUST-0003,Pahal Balay,0.0186,Verified,false,IN,Bangalore,2023-07-22
-CUST-0004,Tejas Kaul,0.0677,Verified,false,IN,Jaipur,2025-07-30
-CUST-0005,Rushil Saini,0.1809,Pending,true,IN,Ahmedabad,2024-05-13
-CUST-0006,Arunima Ahuja,0.1326,Verified,false,IN,Chandigarh,2024-02-09
-CUST-0007,Harini Mall,0.0369,Verified,false,IN,Mumbai,2024-02-02
-CUST-0008,Gayathri Chaudry,0.0226,Verified,false,IN,Indore,2023-10-28
-CUST-0009,Gunbir Parmer,0.1701,Pending,false,IN,Mumbai,2024-11-21
-CUST-0010,Caleb Sharaf,0.0658,Verified,false,IN,Lucknow,2025-09-16
-CUST-0011,Kritika Brar,0.258,Expired,false,IN,Mumbai,2025-10-10
-CUST-0012,Janaki Handa,0.2519,Verified,false,IN,Kochi,2026-06-04
-CUST-0013,Chakradev Kari,0.2816,Verified,false,IN,Chandigarh,2024-08-28
-CUST-0014,Viraj Chaudhuri,0.2214,Verified,false,IN,Jaipur,2025-01-16
-CUST-0015,Sudiksha Patla,0.104,Pending,false,IN,Kochi,2024-02-13
-CUST-0016,Isha Kadakia,0.1015,Verified,false,IN,Indore,2026-04-12
-CUST-0017,Ekbal Garg,0.2001,Verified,false,IN,Chennai,2025-09-12
-CUST-0018,Nihal Shere,0.0868,Verified,false,IN,Delhi,2025-01-15
-CUST-0019,Theodore Nair,0.1795,Expired,false,IN,Chandigarh,2023-08-31
-CUST-0020,Azad Mutti,0.1578,Verified,true,IN,Delhi,2025-02-18
-CUST-0021,Dominic Kakar,0.192,Pending,false,IN,Delhi,2025-11-03
-CUST-0022,Simon Tata,0.1207,Rejected,false,IN,Kolkata,2025-02-09
-CUST-0023,Luke Lanka,0.219,Verified,false,IN,Kochi,2024-01-08
-CUST-0024,Adya Sangha,0.1959,Verified,false,IN,Indore,2025-11-28
-CUST-0025,Janaki Kanda,0.2866,Expired,false,IN,Bangalore,2024-01-06
-CUST-0026,Gavin Batta,0.2747,Expired,false,IN,Jaipur,2023-11-23
-CUST-0027,Nathaniel Sami,0.1184,Verified,false,IN,Delhi,2025-12-18
-CUST-0028,Lekha Raj,0.104,Verified,false,IN,Lucknow,2025-12-17
-CUST-0029,Zayan Apte,0.0268,Expired,false,IN,Chennai,2026-04-27
-CUST-0030,Amara Oak,0.1509,Verified,false,IN,Chandigarh,2023-11-26
-CUST-0031,Radhika Dugar,0.2013,Expired,false,IN,Delhi,2025-05-10
-CUST-0032,Adya Tella,0.2794,Pending,false,IN,Chennai,2024-03-09
-CUST-0033,Chanchal Tripathi,0.2986,Verified,false,IN,Kolkata,2026-01-07
-CUST-0034,Michael Prakash,0.0819,Verified,true,IN,Mumbai,2024-02-11
-CUST-0035,Ekiya Suresh,0.0739,Verified,false,IN,Lucknow,2023-07-06
-CUST-0036,Janani Mohanty,0.2726,Expired,false,IN,Mumbai,2024-06-11
-CUST-0037,Wridesh Brar,0.204,Verified,false,IN,Hyderabad,2023-10-17
-CUST-0038,Ekapad Walia,0.2375,Pending,false,IN,Chennai,2023-12-18
-CUST-0039,Vaishnavi Gandhi,0.135,Verified,false,IN,Kochi,2024-07-21
-CUST-0040,Siddharth Zacharia,0.1995,Verified,false,IN,Kochi,2026-05-12
-CUST-0041,Devika Rastogi,0.2599,Verified,false,IN,Indore,2026-04-14
-CUST-0042,Raksha Varughese,0.1323,Verified,false,IN,Delhi,2025-05-07
-CUST-0043,Yug Kar,0.2443,Expired,false,IN,Ahmedabad,2023-09-13
-CUST-0044,Ansh Karpe,0.2786,Pending,false,IN,Mumbai,2025-12-06
-CUST-0045,Abhimanyu Bobal,0.072,Verified,false,IN,Ahmedabad,2026-02-10
-CUST-0046,Veer Bir,0.2957,Verified,false,IN,Bangalore,2023-07-24
-CUST-0047,Ekavir Varkey,0.1327,Rejected,false,IN,Hyderabad,2024-06-09
-CUST-0048,Vedika Kala,0.0651,Verified,false,IN,Delhi,2025-09-20
-CUST-0049,Urvashi Kibe,0.1009,Verified,false,IN,Chandigarh,2025-06-09
-CUST-0050,Ranveer Chandra,0.2886,Verified,false,IN,Bangalore,2023-11-03
+CUST-0001,Janaki Hayer,0.1766,Pending,false,IN,Jaipur,2023-09-18
+CUST-0002,Anvi Baral,0.0937,Verified,false,IN,Kolkata,2026-04-04
+CUST-0003,Peter Gandhi,0.1204,Verified,false,IN,Chennai,2024-10-13
+CUST-0004,Nitesh Bhatti,0.0927,Verified,false,IN,Bangalore,2025-10-15
+CUST-0005,Ekalinga More,0.2202,Pending,false,IN,Kochi,2024-05-29
+CUST-0006,Dominic Sanghvi,0.2051,Verified,false,IN,Ahmedabad,2024-10-03
+CUST-0007,Mitali Balay,0.1832,Pending,false,IN,Nagpur,2025-07-07
+CUST-0008,Rayaan Dhaliwal,0.0338,Verified,false,IN,Ahmedabad,2025-09-15
+CUST-0009,Kala Yohannan,0.1658,Verified,false,IN,Chandigarh,2025-07-08
+CUST-0010,Benjamin Mannan,0.0663,Verified,false,IN,Chennai,2023-11-23
+CUST-0011,Guneet Bajaj,0.2225,Verified,false,IN,Chandigarh,2023-09-16
+CUST-0012,Wridesh Parsa,0.1068,Verified,false,IN,Delhi,2025-11-03
+CUST-0013,Krishna Hora,0.059,Verified,false,IN,Mumbai,2025-11-30
+CUST-0014,Vyanjana Lad,0.1806,Pending,false,IN,Indore,2026-06-11
+CUST-0015,Akshay Singh,0.0153,Rejected,false,IN,Delhi,2025-07-08
+CUST-0016,Joshua Kata,0.1452,Verified,false,IN,Chennai,2024-10-02
+CUST-0017,Elijah Rastogi,0.2148,Pending,true,IN,Ahmedabad,2024-12-09
+CUST-0018,Baljiwan Babu,0.1675,Verified,false,IN,Jaipur,2025-03-03
+CUST-0019,Anita Apte,0.2542,Verified,false,IN,Indore,2023-07-26
+CUST-0020,Aishani Hora,0.165,Verified,false,IN,Bangalore,2025-02-13
+CUST-0021,Pranit Mangat,0.1256,Verified,false,IN,Jaipur,2024-12-26
+CUST-0022,Balhaar Agrawal,0.2486,Verified,true,IN,Mumbai,2026-05-27
+CUST-0023,Daksha Ratta,0.1839,Verified,false,IN,Mumbai,2024-09-07
+CUST-0024,Isaiah Hans,0.1025,Verified,false,IN,Pune,2024-12-07
+CUST-0025,Advay Badal,0.2666,Verified,false,IN,Kolkata,2025-11-09
+CUST-0026,Ishita Sethi,0.0423,Verified,true,IN,Jaipur,2025-07-13
+CUST-0027,Yashodhara Sharma,0.2406,Verified,false,IN,Chandigarh,2023-06-30
+CUST-0028,Arjun Nori,0.2576,Verified,false,IN,Indore,2024-06-01
+CUST-0029,Owen Seth,0.0462,Verified,false,IN,Mumbai,2026-04-02
+CUST-0030,Balendra Vala,0.1854,Expired,false,IN,Bangalore,2024-08-11
+CUST-0031,Yug Narang,0.2457,Verified,false,IN,Chennai,2025-09-11
+CUST-0032,William Tella,0.233,Verified,true,IN,Bangalore,2023-09-26
+CUST-0033,Sudiksha Mitter,0.134,Verified,false,IN,Chennai,2025-03-03
+CUST-0034,Irya Mannan,0.0413,Pending,false,IN,Coimbatore,2025-06-17
+CUST-0035,Faraj Modi,0.2558,Verified,false,IN,Coimbatore,2025-03-31
+CUST-0036,Madhav Karpe,0.1521,Verified,false,IN,Nagpur,2024-11-09
+CUST-0037,Abhiram Savant,0.0134,Verified,false,IN,Mumbai,2025-12-09
+CUST-0038,Osha Ratti,0.0766,Verified,false,IN,Mumbai,2023-07-30
+CUST-0039,Indira Bhardwaj,0.0455,Verified,false,IN,Chandigarh,2024-08-31
+CUST-0040,Mitali Handa,0.1224,Verified,false,IN,Delhi,2025-12-30
+CUST-0041,Aayush Dass,0.1245,Verified,false,IN,Indore,2024-05-19
+CUST-0042,Dominic Anand,0.0977,Pending,false,IN,Jaipur,2025-03-29
+CUST-0043,Vasudha Sarkar,0.054,Verified,false,IN,Ahmedabad,2024-01-16
+CUST-0044,Irya Viswanathan,0.223,Pending,false,IN,Delhi,2024-12-30
+CUST-0045,Laban Kothari,0.0777,Verified,false,IN,Kolkata,2025-01-08
+CUST-0046,Ryan Sangha,0.2397,Expired,false,IN,Chandigarh,2024-10-04
+CUST-0047,Hitesh Kunda,0.253,Pending,false,IN,Jaipur,2023-11-27
+CUST-0048,Vedhika Lall,0.0467,Verified,false,IN,Mumbai,2024-05-27
+CUST-0049,Bhavani Sethi,0.2534,Pending,false,IN,Kolkata,2024-03-15
+CUST-0050,Ishita Yadav,0.0311,Verified,false,IN,Coimbatore,2025-06-08
 
 // Verify: dim_customer | count

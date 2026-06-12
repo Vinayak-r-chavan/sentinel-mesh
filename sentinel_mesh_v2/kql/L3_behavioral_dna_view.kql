@@ -125,7 +125,7 @@
             by customer_id
         | project 
             customer_id,
-            velocity_30d = velocity_sum_30d / 30.0,
+            velocity_30d = velocity_sum_30d / toreal(baseline_window / 1d),
             amount_profile_30d = sum_amount_30d / velocity_sum_30d,
             amount_entropy_30d = iif(sum_amount_30d > 0, sqrt(max_of(0.0, sum_sq_amount_30d / velocity_sum_30d - pow(sum_amount_30d / velocity_sum_30d, 2.0))) / (sum_amount_30d / velocity_sum_30d), 0.0),
             counterparty_diversity_30d,
@@ -135,13 +135,19 @@
             device_switching_30d = iif(velocity_sum_30d > 0, todouble(device_count_30d) / velocity_sum_30d, 0.0),
             cross_border_ratio_30d = iif(velocity_sum_30d > 0, todouble(cross_border_count_30d) / velocity_sum_30d, 0.0);
     DNA_1D
-    | join kind=inner DNA_30D on customer_id
+    | join kind=leftouter DNA_30D on customer_id
+    | extend 
+        velocity_30d = coalesce(velocity_30d, 0.0),
+        amount_profile_30d = coalesce(amount_profile_30d, 0.0),
+        channel_mix_30d = coalesce(channel_mix_30d, 0.0),
+        geographic_spread_30d = coalesce(geographic_spread_30d, 0.0),
+        round_number_ratio_30d = coalesce(round_number_ratio_30d, 0.0)
     | extend drift_score = sqrt(
-        pow(velocity_1d - velocity_30d, 2) +
-        pow(amount_profile_1d - amount_profile_30d, 2) / amt_norm_factor +
-        pow(channel_mix_1d - channel_mix_30d, 2) +
-        pow(geographic_spread_1d - geographic_spread_30d, 2) +
-        pow(round_number_ratio_1d - round_number_ratio_30d, 2)
+        pow(velocity_1d - velocity_30d, 2.0) +
+        pow((amount_profile_1d - amount_profile_30d) / amt_norm_factor, 2.0) +
+        pow(channel_mix_1d - channel_mix_30d, 2.0) +
+        pow(geographic_spread_1d - geographic_spread_30d, 2.0) +
+        pow(round_number_ratio_1d - round_number_ratio_30d, 2.0)
       )
     | project 
         customer_id,

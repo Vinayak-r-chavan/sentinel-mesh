@@ -66,12 +66,23 @@ config_df = spark.read \
 current_configs = {row["config_key"]: row["config_value"] for row in config_df.collect()}
 print(f"Loaded {len(current_configs)} config keys from dim_adaptive_config.")
 
-# 2. Load dispositions (last 90 days of feedback)
+# 2. Load dispositions (last 90 days of feedback, joined and expanded to original agent names)
+dispositions_query = """
+fact_analyst_dispositions
+| where timestamp >= ago(90d)
+| join kind=inner (
+    fact_alerts
+    | project alert_id, agent_list = cross_correlations.agent_list
+) on alert_id
+| mv-expand agent_name = agent_list to typeof(string)
+| project disposition_id, alert_id, customer_id, agent_name, disposition, analyst_id, timestamp, notes
+"""
+
 dispositions_df = spark.read \
     .format("com.microsoft.kusto.spark.synapse.datasource") \
     .option("kustoCluster", EVENTHOUSE_CLUSTER_URI) \
     .option("kustoDatabase", EVENTHOUSE_DATABASE) \
-    .option("kustoQuery", "fact_analyst_dispositions | where timestamp >= ago(90d)") \
+    .option("kustoQuery", dispositions_query) \
     .load()
 
 dispositions_count = dispositions_df.count()
@@ -115,7 +126,7 @@ else:
 
         # Recalibrate Thresholds based on performance
         # 1. Velocity Agent
-        if agent == "Velocity Anomaly" and total >= 5:
+        if agent == "Velocity Anomaly Detector" and total >= 5:
             # If False Positive rate exceeds 30%, increase the sigma threshold to reduce noise
             if fp_rate > 0.30:
                 old_val = updated_configs.get("agent.velocity.sigma_threshold", 3.0)
@@ -185,18 +196,20 @@ if dispositions_count > 0:
     
     if avg_precision < 0.60:
         # Agents are noisy. Reduce agent consensus weight and increase centrality + DNA
-        diff = 5.0
-        w1 = max(15.0, w1 - diff)
-        w2 = min(40.0, w2 + (diff / 2.0))
-        w3 = min(40.0, w3 + (diff / 2.0))
-        print(f"⚠️ Decreasing Agent Consensus weight due to noise: {w1+diff}% -> {w1}%. Increasing structural weights.")
+        w1_old = w1
+        w1 = max(15.0, w1 - 5.0)
+        actual_diff = w1_old - w1
+        w2 = min(40.0, w2 + (actual_diff / 2.0))
+        w3 = min(40.0, w3 + (actual_diff / 2.0))
+        print(f"⚠️ Decreasing Agent Consensus weight due to noise: {w1_old}% -> {w1}%. Increasing structural weights by {actual_diff}%.")
     elif avg_precision > 0.85:
         # Agents are highly accurate. Increase consensus weight.
-        diff = 5.0
-        w1 = min(50.0, w1 + diff)
-        w2 = max(10.0, w2 - (diff / 2.0))
-        w3 = max(10.0, w3 - (diff / 2.0))
-        print(f"💡 Increasing Agent Consensus weight due to high precision: {w1-diff}% -> {w1}%")
+        w1_old = w1
+        w1 = min(50.0, w1 + 5.0)
+        actual_diff = w1 - w1_old
+        w2 = max(10.0, w2 - (actual_diff / 2.0))
+        w3 = max(10.0, w3 - (actual_diff / 2.0))
+        print(f"💡 Increasing Agent Consensus weight due to high precision: {w1_old}% -> {w1}%. Decreasing structural weights by {actual_diff}%.")
         
     # Ensure exact sum of 100%
     total_weight = w1 + w2 + w3 + w4 + w5
@@ -221,7 +234,7 @@ if dispositions_count > 0:
 # ============================================================================
 
 if dispositions_count > 0:
-    from datetime import datetime
+    from datetime import datetime, timezone
     
     # Map back to rows
     recalibrated_rows = []
@@ -235,7 +248,7 @@ if dispositions_count > 0:
             key,
             float(value),
             desc,
-            datetime.utcnow(),
+            datetime.now(timezone.utc).replace(tzinfo=None),
             "L9_Recalibration_Engine"
         ))
         
@@ -252,13 +265,13 @@ if dispositions_count > 0:
     
     new_config_df = spark.createDataFrame(recalibrated_rows, schema)
     
-    print("\n📥 Overwriting dim_adaptive_config in Eventhouse...")
+    print("\n📥 Appending recalibrated configs to dim_adaptive_config in Eventhouse...")
     new_config_df.write \
         .format("com.microsoft.kusto.spark.synapse.datasource") \
         .option("kustoCluster", EVENTHOUSE_CLUSTER_URI) \
         .option("kustoDatabase", EVENTHOUSE_DATABASE) \
         .option("kustoTable", "dim_adaptive_config") \
-        .mode("overwrite") \
+        .mode("append") \
         .save()
         
     print("✅ Configuration recalibration successfully written to Eventhouse database!")

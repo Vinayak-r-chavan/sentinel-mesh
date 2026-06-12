@@ -1,29 +1,29 @@
 // Auto-generated KQL ingestion for dim_merchant
-// Generated at: 2026-06-06T08:35:38.455313+00:00
+// Generated at: 2026-06-12T10:30:11.179787+00:00
 // Rows: 20
 
 .clear table dim_merchant data
 
 .ingest inline into table dim_merchant <|
-MERC-0001,Dar-Koshy,6051,Money Transfer,High,0.7774,2023-06-05
-MERC-0002,Baral, Bumb and Saini,7995,Gambling,High,0.7918,2026-05-08
-MERC-0003,Virk, Mutti and Lal,7995,Gambling,High,0.4404,2026-05-23
-MERC-0004,Murthy, Khare and Lanka,5732,Electronics,Low,0.0712,2023-03-01
-MERC-0005,Mital Group,5651,Apparel,Low,0.0225,2024-10-16
-MERC-0006,Andra Group,5541,Gas Stations,Low,0.1286,2024-02-12
-MERC-0007,Borah PLC,5999,Miscellaneous,High,0.7917,2026-03-20
-MERC-0008,Lanka, Deo and Palla,6051,Money Transfer,High,0.947,2023-03-29
-MERC-0009,Pingle LLC,5999,Miscellaneous,High,0.5622,2022-01-04
-MERC-0010,Mittal-Wadhwa,5999,Miscellaneous,High,0.733,2022-10-08
-MERC-0011,Mistry, Chawla and Desai,5732,Electronics,Low,0.1607,2021-06-29
-MERC-0012,Chhabra Ltd,5732,Electronics,Low,0.172,2023-09-04
-MERC-0013,Magar LLC,5999,Miscellaneous,High,0.7965,2026-02-17
-MERC-0014,Oza, Jani and Lalla,5812,Restaurants,Low,0.0917,2023-03-21
-MERC-0015,Krishnamurthy-Behl,5812,Restaurants,Low,0.0886,2025-09-22
-MERC-0016,Sampath, Malhotra and Basu,7995,Gambling,High,0.6193,2022-03-18
-MERC-0017,De-Lala,5732,Electronics,Low,0.0694,2021-06-16
-MERC-0018,Sathe, Sane and Andra,5944,Jewelry,Medium,0.3828,2022-10-20
-MERC-0019,Dixit PLC,5944,Jewelry,Medium,0.4838,2022-05-18
-MERC-0020,Divan-Sani,7995,Gambling,High,0.4369,2021-09-24
+MERC-0001,Ahuja-Dey,5944,Jewelry,Medium,0.4664,2022-04-17
+MERC-0002,Dugar and Sons,6051,Money Transfer,High,0.8171,2022-02-01
+MERC-0003,Dhingra Group,5732,Electronics,Low,0.1765,2025-02-02
+MERC-0004,"Palla, Goyal and Subramaniam",5944,Jewelry,Medium,0.2253,2022-08-15
+MERC-0005,"Anand, Krishnan and Balasubramanian",6051,Money Transfer,High,0.8597,2025-07-09
+MERC-0006,Lall Ltd,5651,Apparel,Low,0.142,2022-08-26
+MERC-0007,Nanda LLC,5541,Gas Stations,Low,0.0439,2024-05-18
+MERC-0008,"Mital, Murthy and Gole",5651,Apparel,Low,0.0833,2023-08-11
+MERC-0009,"Sule, Sabharwal and Chaudhuri",6051,Money Transfer,High,0.5064,2026-03-24
+MERC-0010,Lata-Nadkarni,5732,Electronics,Low,0.1081,2025-08-08
+MERC-0011,Raja and Sons,7995,Gambling,High,0.5521,2023-05-11
+MERC-0012,"Mody, Chaudhari and Maharaj",5999,Miscellaneous,High,0.7951,2022-09-08
+MERC-0013,Mammen LLC,5944,Jewelry,Medium,0.4937,2025-02-15
+MERC-0014,Mukhopadhyay and Sons,7995,Gambling,High,0.644,2021-12-07
+MERC-0015,Srinivasan Inc,5812,Restaurants,Low,0.0206,2021-09-13
+MERC-0016,Minhas and Sons,5651,Apparel,Low,0.014,2025-08-24
+MERC-0017,Mahajan-Butala,5541,Gas Stations,Low,0.0865,2025-07-25
+MERC-0018,Bahri-Jhaveri,5541,Gas Stations,Low,0.0707,2026-01-29
+MERC-0019,"Peri, Ganguly and Gulati",5812,Restaurants,Low,0.107,2024-08-12
+MERC-0020,"Mallick, Dubey and Oommen",5999,Miscellaneous,High,0.7425,2022-07-09
 
 // Verify: dim_merchant | count

@@ -246,6 +246,9 @@ class DimensionUploader:
             # Write inline ingestion
             f.write(f".ingest inline into table {table_name} <|\n")
 
+            import io
+            csv_buffer = io.StringIO()
+            csv_writer = csv.writer(csv_buffer, lineterminator='\n')
             for row in data:
                 values = []
                 for col in columns:
@@ -255,7 +258,8 @@ class DimensionUploader:
                     if val is None:
                         val = ""
                     values.append(str(val))
-                f.write(",".join(values) + "\n")
+                csv_writer.writerow(values)
+            f.write(csv_buffer.getvalue())
 
             f.write("\n")
             f.write(f"// Verify: {table_name} | count\n")

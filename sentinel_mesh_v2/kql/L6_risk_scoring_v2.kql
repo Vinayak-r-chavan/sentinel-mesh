@@ -12,11 +12,14 @@
 
 .create-or-alter function with (folder = "SentinelMesh/L6") generate_composite_alerts() {
     // --- 1. Load config-driven weights & thresholds ---
-    let w_f1 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f1" | project config_value), 35.0) / 100.0;
-    let w_f2 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f2" | project config_value), 20.0) / 100.0;
-    let w_f3 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f3" | project config_value), 20.0) / 100.0;
-    let w_f4 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f4" | project config_value), 15.0) / 100.0;
-    let w_f5 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f5" | project config_value), 10.0) / 100.0;
+    let w_f1 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f1_agent_consensus" | project config_value), 35.0) / 100.0;
+    let w_f2 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f2_graph_centrality" | project config_value), 20.0) / 100.0;
+    let w_f3 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f3_dna_deviation" | project config_value), 20.0) / 100.0;
+    let w_f4 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f4_historical_risk" | project config_value), 15.0) / 100.0;
+    let w_f5 = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.weight.f5_watchlist_match" | project config_value), 10.0) / 100.0;
+    // Normalization divisors
+    let drift_scale = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.drift.max_scale" | project config_value), 10.0);
+    let history_scale = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.history.max_scale" | project config_value), 5.0);
     // Tiers
     let tier_low = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.tier.low" | project config_value), 30.0);
     let tier_med = coalesce(toscalar(dim_adaptive_config | where config_key == "scoring.tier.medium" | project config_value), 60.0);
@@ -67,10 +70,10 @@
         F1 = coalesce(AvgAgentConfidence * 100.0, 0.0),
         // Factor 2: Graph Centrality (0 - 100, normalized against max PageRank)
         F2 = coalesce(min_of(toreal(pagerank_score) / max_pr_val * 100.0, 100.0), 0.0),
-        // Factor 3: DNA Deviation (0 - 100, normalized against 10.0 drift max)
-        F3 = coalesce(min_of(toreal(drift_score) / 10.0 * 100.0, 100.0), 0.0),
-        // Factor 4: Historical Alerts (0 - 100, normalized against 5 alerts max)
-        F4 = coalesce(min_of(toreal(AlertCount) / 5.0 * 100.0, 100.0), 0.0),
+        // Factor 3: DNA Deviation (0 - 100, normalized against drift scale)
+        F3 = coalesce(min_of(toreal(drift_score) / drift_scale * 100.0, 100.0), 0.0),
+        // Factor 4: Historical Alerts (0 - 100, normalized against history scale)
+        F4 = coalesce(min_of(toreal(AlertCount) / history_scale * 100.0, 100.0), 0.0),
         // Factor 5: PEP Watchlist Match (100 if true, 0 if false)
         F5 = iif(pep_flag == true, 100.0, 0.0)
     | extend 

@@ -29,7 +29,7 @@
     let amt_threshold = toscalar(dim_adaptive_config | where config_key == "agent.circular_flow.amount_consistency_threshold" | project config_value);
     let consistency_threshold = iif(isnull(amt_threshold), 0.8, amt_threshold);
     let Nodes = fact_transactions | summarize customer_id = take_any(customer_id) by account_id;
-    let Edges = fact_transactions | where counterparty_account != "ACC-SELF" and counterparty_account != "ACC-MERC-NONE" | project source = account_id, destination = counterparty_account, amount, timestamp, transaction_id, customer_id;
+    let Edges = fact_transactions | where counterparty_account != account_id and counterparty_account !startswith "ACC-MERC" | project source = account_id, destination = counterparty_account, amount, timestamp, transaction_id, customer_id;
     Edges
     | make-graph source --> destination with Nodes on account_id
     | graph-match (Start)-[transfers*3..10]->(Start)
@@ -39,6 +39,7 @@
         Hop_Count = array_length(map(transfers, destination)),
         Min_Amount = array_sort_asc(map(transfers, amount))[0],
         Max_Amount = array_sort_desc(map(transfers, amount))[0],
+        Sum_Amount = toreal(array_sum(map(transfers, amount))),
         End_Time = array_sort_desc(map(transfers, timestamp))[0],
         Start_Time = array_sort_asc(map(transfers, timestamp))[0],
         All_Accounts = array_concat(pack_array(Start.account_id), map(transfers, destination)),
@@ -54,8 +55,8 @@
         cycle_accounts = take_any(All_Accounts),
         cycle_customers = take_any(All_Customers),
         hop_count = take_any(Hop_Count),
-        total_amount = toreal(take_any(Min_Amount)),
-        avg_amount_per_hop = toreal(take_any(Min_Amount)),
+        total_amount = toreal(take_any(Sum_Amount)),
+        avg_amount_per_hop = toreal(take_any(Sum_Amount)) / toreal(take_any(Hop_Count)),
         amount_consistency_pct = round(take_any(amount_consistency) * 100.0, 2),
         time_window_minutes = round(toreal(take_any(duration_seconds)) / 60.0, 2),
         detected_at = now(),
