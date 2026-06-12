@@ -54,13 +54,13 @@ def get_kusto_client(cluster_uri: str) -> KustoClient:
 
     if client_id and client_secret and tenant_id:
         print("[DEPLOY] Authenticating using Service Principal credentials (CI/CD mode)...")
-        kcsb = KustoConnectionStringBuilder.with_aad_application_key_membership(
+        kcsb = KustoConnectionStringBuilder.with_aad_application_key_authentication(
             cluster_uri, client_id, client_secret, tenant_id
         )
     else:
         print("[DEPLOY] No Service Principal credentials found. Authenticating using Interactive Browser Login...")
         print("[DEPLOY] A browser window will open for you to log in with your Microsoft account.")
-        kcsb = KustoConnectionStringBuilder.with_aad_interactive_authentication(cluster_uri)
+        kcsb = KustoConnectionStringBuilder.with_interactive_login(cluster_uri)
         
     return KustoClient(kcsb)
 
