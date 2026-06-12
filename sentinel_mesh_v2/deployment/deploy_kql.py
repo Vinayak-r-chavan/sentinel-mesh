@@ -24,8 +24,8 @@ def split_kql_commands(content: str) -> list[str]:
     
     for line in lines:
         stripped = line.strip()
-        # Ignore comments outside of command blocks
-        if stripped.startswith("//") and not current_command:
+        # Skip comment lines entirely
+        if stripped.startswith("//"):
             continue
         
         if stripped.startswith("."):
