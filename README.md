@@ -11,35 +11,29 @@ The project has been organized into a clean, professional structure:
 ```text
 hack2future/
 ├── docs/                             # All documentation, slides, and diagrams
-│   ├── SENTINEL_MESH_Blueprint.pptx  # PowerPoint presentation
-│   ├── SENTINEL_MESH_Deep_Dive.docx  # 47-page technical whitepaper
 │   ├── sentinel_mesh_blueprint.md    # Markdown architecture blueprint
 │   ├── architecture_diagram.html     # Interactive 9-layer interactive flow
 │   ├── architecture_overview.html    # Interactive workspace diagram
 │   ├── roadmap_diagram.html          # Interactive sprint plan
 │   └── simple_flow_diagram.html      # Simplified data flow layout
 │
-├── generators/                       # Python scripts to compile documents & slides
-│   ├── generate_blueprint_ppt.py     # Generates the PowerPoint file
-│   └── generate_sentinel_doc.py      # Generates the 47-page Word document
-│
-├── src/                              # The active codebase for the real-time POC
+├── sentinel_mesh_v2/                 # The active codebase for the real-time POC
 │   ├── data_simulator/               # Local transaction streaming simulator
 │   │   ├── simulator.py              # Streams normal & AML pattern transactions
 │   │   └── requirements.txt          # Simulator python dependencies
 │   │
 │   ├── kql/                          # Real-Time Intelligence DDL & agent queries
 │   │   ├── L2_eventhouse_ddl.kql     # Schema for fact_transactions
-│   │   ├── L5_swarm_agents.kql       # Structuring & Velocity KQL agents
-│   │   └── L6_risk_scoring.kql       # Risk orchestration function
+│   │   ├── L5_swarm_agents_v2.kql    # Structuring & Velocity KQL agents
+│   │   └── L6_risk_scoring_v2.kql    # Risk orchestration function
 │   │
 │   └── notebooks/                    # Spark Notebooks for semantic layers
-│       ├── L3_IQ_Ontology_Setup.ipynb # DNA Vector calculation & ontology mapping
-│       └── L4_Fabric_Graph_GQL.ipynb  # Temporal graph queries (circular flows)
+│       ├── L3_behavioral_dna.py      # DNA Vector calculation
+│       ├── L4_graph_analysis.py      # Temporal graph queries
+│       ├── L9_recalibration.py       # Auto-recalibration logic
+│       └── entity_resolution.py      # Entity resolution models
 │
 ├── .env                              # Local credentials (git-ignored)
-├── implimentation_guide.md           # Master step-by-step implementation guide
-├── task.md                           # Implementation task checklist
 └── README.md                         # This file
 ```
 
@@ -52,7 +46,7 @@ hack2future/
    ```
 2. Run the simulator to stream live transactions:
    ```bash
-   python src/data_simulator/simulator.py --mode stream
+   python sentinel_mesh_v2/data_simulator/simulator.py --mode stream
    ```
 
 ---
