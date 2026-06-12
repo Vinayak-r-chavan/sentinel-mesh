@@ -70,7 +70,247 @@ hack2future/
 
 ---
 
-### 3. AUDIT INSTRUCTIONS & CHECKS
+### 3. EVENTHOUSE TABLE SCHEMAS & SAMPLE DATA
+To help you audit the schemas and query alignments, here are the columns, types, and sample JSON rows for the 13 tables in the Eventhouse database:
+
+#### 1. `fact_transactions`
+*   **Columns:** transaction_id (string), customer_id (string), customer_name (string), account_id (string), amount (real), timestamp (datetime), channel (string), device_id (string), ip_address (string), geo_location (string), merchant_id (string), mcc_code (string), counterparty_account (string), transaction_type (string), ingestion_timestamp (datetime), processing_status (string), risk_flag (string), pattern_hash (string), scenario_id (string)
+*   **Sample Data:**
+    ```json
+    {
+      "transaction_id": "TXN-20260612092340-9051-056",
+      "customer_id": "CUST-0022",
+      "customer_name": "Aarini Luthra",
+      "account_id": "ACC-0022",
+      "amount": 4361590.87,
+      "timestamp": "2026-06-12T09:23:40Z",
+      "channel": "UPI",
+      "device_id": "DEV-0022",
+      "ip_address": "192.168.1.56",
+      "geo_location": "BTM Layout, Bangalore",
+      "merchant_id": "MERC-NONE",
+      "mcc_code": null,
+      "counterparty_account": "ACC-9051",
+      "transaction_type": "transfer",
+      "ingestion_timestamp": "2026-06-12T09:23:40Z",
+      "processing_status": "pending",
+      "risk_flag": "none",
+      "pattern_hash": "a4b2c8d9e0f1",
+      "scenario_id": "shadow_link"
+    }
+    ```
+
+#### 2. `fact_alerts`
+*   **Columns:** alert_id (string), customer_id (string), customer_name (string), agent_name (string), confidence (real), reason (string), risk_score (real), risk_tier (string), status (string), disposition (string), triggered_at (datetime), resolved_at (datetime), related_transactions (dynamic), cross_correlations (dynamic)
+*   **Sample Data:**
+    ```json
+    {
+      "alert_id": "ALRT-1780900001",
+      "customer_id": "CUST-0022",
+      "customer_name": "Bhavika Tank",
+      "agent_name": "Structuring Sentinel",
+      "confidence": 0.85,
+      "reason": "Customer structured 5 transactions totaling INR 3217304.07 (individual max: INR 924682.57, threshold: INR 1000000.0)",
+      "risk_score": 57.43,
+      "risk_tier": "MEDIUM",
+      "status": "ACTIVE",
+      "disposition": "PENDING",
+      "triggered_at": "2026-06-07T21:39:00Z",
+      "resolved_at": null,
+      "related_transactions": ["TXN-10000001", "TXN-10000002"],
+      "cross_correlations": {"agent_list": ["Structuring Sentinel", "Geo-Temporal Analyzer"], "pagerank_score": 0.42, "dna_drift_score": 2.1}
+    }
+    ```
+
+#### 3. `fact_sar_reports`
+*   **Columns:** sar_id (string), customer_id (string), customer_name (string), case_id (string), executive_summary (string), suspicious_activity (string), red_flags (dynamic), recommended_actions (dynamic), risk_assessment (string), risk_score (real), model_version (string), prompt_hash (string), generated_at (datetime), validated (bool), content_safety_score (real)
+*   **Sample Data:**
+    ```json
+    {
+      "sar_id": "SAR-1780902993-CUST-0045",
+      "customer_id": "CUST-0045",
+      "customer_name": "Praneel Jani",
+      "case_id": "CASE-982103",
+      "executive_summary": "Suspicious rapid movement of funds split below the reporting threshold...",
+      "suspicious_activity": "Deposits of INR 45 Lakhs structured across 5 branches within 8 hours.",
+      "red_flags": ["Structuring", "Geo-Temporal Impossible Travel"],
+      "recommended_actions": ["Escalate to FIU", "Freeze Account"],
+      "risk_assessment": "High risk of money laundering via smurfing scheme.",
+      "risk_score": 68.45,
+      "model_version": "gpt-4o",
+      "prompt_hash": "e3b0c442",
+      "generated_at": "2026-06-08T08:15:00Z",
+      "validated": false,
+      "content_safety_score": 0.98
+    }
+    ```
+
+#### 4. `fact_analyst_dispositions`
+*   **Columns:** disposition_id (string), alert_id (string), customer_id (string), agent_name (string), disposition (string), analyst_id (string), timestamp (datetime), notes (string)
+*   **Sample Data:**
+    ```json
+    {
+      "disposition_id": "DISP-98213",
+      "alert_id": "ALRT-1780900001",
+      "customer_id": "CUST-0022",
+      "agent_name": "Structuring Sentinel",
+      "disposition": "TRUE_POSITIVE",
+      "analyst_id": "ANALYST-04",
+      "timestamp": "2026-06-08T10:30:00Z",
+      "notes": "Structuring activity confirmed on account ACC-0022."
+    }
+    ```
+
+#### 5. `fact_circular_flows`
+*   **Columns:** flow_id (string), cycle_accounts (dynamic), cycle_customers (dynamic), hop_count (int), total_amount (real), avg_amount_per_hop (real), amount_consistency_pct (real), time_window_minutes (real), detected_at (datetime), status (string)
+*   **Sample Data:**
+    ```json
+    {
+      "flow_id": "FLOW-9821",
+      "cycle_accounts": ["ACC-0022", "ACC-89201", "ACC-30492"],
+      "cycle_customers": ["CUST-0022", "CUST-0046", "CUST-0004"],
+      "hop_count": 3,
+      "total_amount": 1320763.33,
+      "avg_amount_per_hop": 1320763.33,
+      "amount_consistency_pct": 99.8,
+      "time_window_minutes": 45,
+      "detected_at": "2026-06-12T09:23:40Z",
+      "status": "ACTIVE"
+    }
+    ```
+
+#### 6. `fact_risk_scores`
+*   **Columns:** snapshot_id (string), customer_id (string), customer_name (string), risk_score (real), risk_tier (string), f1_agent_consensus (real), f2_graph_centrality (real), f3_dna_deviation (real), f4_historical_risk (real), f5_watchlist_match (real), active_agents (dynamic), snapshot_timestamp (datetime)
+*   **Sample Data:**
+    ```json
+    {
+      "snapshot_id": "SNAP-17809045",
+      "customer_id": "CUST-0022",
+      "customer_name": "Bhavika Tank",
+      "risk_score": 68.45,
+      "risk_tier": "HIGH",
+      "f1_agent_consensus": 0.92,
+      "f2_graph_centrality": 0.42,
+      "f3_dna_deviation": 2.1,
+      "f4_historical_risk": 0.15,
+      "f5_watchlist_match": 0.0,
+      "active_agents": ["Structuring Sentinel", "Geo-Temporal Analyzer"],
+      "snapshot_timestamp": "2026-06-12T09:23:40Z"
+    }
+    ```
+
+#### 7. `dim_customer`
+*   **Columns:** customer_id (string), name (string), risk_score (real), kyc_status (string), pep_flag (bool), country_code (string), city (string), created_date (datetime)
+*   **Sample Data:**
+    ```json
+    {
+      "customer_id": "CUST-0022",
+      "name": "Bhavika Tank",
+      "risk_score": 0.15,
+      "kyc_status": "Verified",
+      "pep_flag": false,
+      "country_code": "IN",
+      "city": "Mumbai",
+      "created_date": "2024-01-15T00:00:00Z"
+    }
+    ```
+
+#### 8. `dim_account`
+*   **Columns:** account_id (string), customer_id (string), account_type (string), balance (real), velocity_index (real), opened_date (datetime), dormancy_score (real)
+*   **Sample Data:**
+    ```json
+    {
+      "account_id": "ACC-0022",
+      "customer_id": "CUST-0022",
+      "account_type": "Savings",
+      "balance": 2504300.50,
+      "velocity_index": 1.2,
+      "opened_date": "2024-01-16T00:00:00Z",
+      "dormancy_score": 0.05
+    }
+    ```
+
+#### 9. `dim_merchant`
+*   **Columns:** merchant_id (string), merchant_name (string), mcc_code (string), category (string), risk_tier (string), shell_score (real), registered_date (datetime)
+*   **Sample Data:**
+    ```json
+    {
+      "merchant_id": "MERC-0010",
+      "merchant_name": "Grand Star Casino Ltd",
+      "mcc_code": "7995",
+      "category": "Gambling",
+      "risk_tier": "High",
+      "shell_score": 0.82,
+      "registered_date": "2025-11-20T00:00:00Z"
+    }
+    ```
+
+#### 10. `dim_device`
+*   **Columns:** device_id (string), device_type (string), first_seen (datetime), last_seen (datetime), customer_ids (dynamic)
+*   **Sample Data:**
+    ```json
+    {
+      "device_id": "DEV-0022",
+      "device_type": "MOBI",
+      "first_seen": "2026-01-01T08:00:00Z",
+      "last_seen": "2026-06-12T09:23:40Z",
+      "customer_ids": ["CUST-0022", "CUST-0046"]
+    }
+    ```
+
+#### 11. `dim_ip_address`
+*   **Columns:** ip_address (string), geo_location (string), is_vpn (bool), is_tor (bool), customer_ids (dynamic)
+*   **Sample Data:**
+    ```json
+    {
+      "ip_address": "192.168.1.56",
+      "geo_location": "BTM Layout, Bangalore",
+      "is_vpn": false,
+      "is_tor": false,
+      "customer_ids": ["CUST-0022"]
+    }
+    ```
+
+#### 12. `dim_behavioral_dna`
+*   **Columns:** customer_id (string), time_window (string), velocity (real), amount_profile (real), temporal_pattern (real), counterparty_diversity (real), channel_mix (real), geographic_spread (real), amount_entropy (real), round_number_ratio (real), counterparty_recurrence (real), dormancy_burst (real), cross_border_ratio (real), device_switching (real), drift_score (real), computed_at (datetime)
+*   **Sample Data:**
+    ```json
+    {
+      "customer_id": "CUST-0022",
+      "time_window": "30d",
+      "velocity": 3.42,
+      "amount_profile": 2.15,
+      "temporal_pattern": 1.05,
+      "counterparty_diversity": 0.88,
+      "channel_mix": 0.45,
+      "geographic_spread": 2.95,
+      "amount_entropy": 1.25,
+      "round_number_ratio": 0.20,
+      "counterparty_recurrence": 0.65,
+      "dormancy_burst": 0.0,
+      "cross_border_ratio": 0.05,
+      "device_switching": 1.50,
+      "drift_score": 3.12,
+      "computed_at": "2026-06-12T09:00:00Z"
+    }
+    ```
+
+#### 13. `dim_adaptive_config`
+*   **Columns:** config_key (string), config_value (real), description (string), last_updated (datetime), updated_by (string)
+*   **Sample Data:**
+    ```json
+    {
+      "config_key": "agent.structuring.amount_threshold",
+      "config_value": 1000000.0,
+      "description": "CTR reporting threshold for smurfing detection.",
+      "last_updated": "2026-06-12T00:00:00Z",
+      "updated_by": "L9_recalibration"
+    }
+    ```
+
+---
+
+### 4. AUDIT INSTRUCTIONS & CHECKS
 
 Analyze the files in detail and check for the following:
 
@@ -106,7 +346,7 @@ Analyze the files in detail and check for the following:
 
 ---
 
-### 4. EXPECTED OUTPUT FORMAT
+### 5. EXPECTED OUTPUT FORMAT
 
 Please compile your findings into a structured, highly actionable Markdown report containing:
 
